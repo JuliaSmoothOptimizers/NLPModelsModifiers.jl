@@ -26,7 +26,7 @@ function LSR1Model(nlp :: AbstractNLPModel; kwargs...)
   return LSR1Model(nlp.meta, nlp, op)
 end
 
-show_header(io :: IO, nlp :: QuasiNewtonModel) = println(io, "$(typeof(nlp)) - A QuasiNewtonModel")
+NLPModels.show_header(io :: IO, nlp :: QuasiNewtonModel) = println(io, "$(typeof(nlp)) - A QuasiNewtonModel")
 
 function Base.show(io :: IO, nlp :: QuasiNewtonModel)
   show_header(io, nlp)
@@ -36,29 +36,27 @@ end
 
 @default_counters QuasiNewtonModel model
 
-function reset_data!(nlp :: QuasiNewtonModel)
+function NLPModels.reset_data!(nlp :: QuasiNewtonModel)
   reset!(nlp.op)
   return nlp
 end
 
 # the following methods are not affected by the Hessian approximation
 for meth in (:obj, :grad, :cons, :jac_coord, :jac)
-  @eval $meth(nlp :: QuasiNewtonModel, x :: AbstractVector) = $meth(nlp.model, x)
+  @eval NLPModels.$meth(nlp :: QuasiNewtonModel, x :: AbstractVector) = $meth(nlp.model, x)
 end
-for meth in (:grad!, :cons!, :jprod, :jtprod, :objgrad, :objgrad!)
-  @eval $meth(nlp :: QuasiNewtonModel, x :: AbstractVector, y :: AbstractVector) = $meth(nlp.model, x, y)
+for meth in (:grad!, :cons!, :jprod, :jtprod, :objgrad, :objgrad!, :jac_coord!)
+  @eval NLPModels.$meth(nlp :: QuasiNewtonModel, x :: AbstractVector, y :: AbstractVector) = $meth(nlp.model, x, y)
 end
 for meth in (:jprod!, :jtprod!)
-  @eval $meth(nlp :: QuasiNewtonModel, x :: AbstractVector, y :: AbstractVector, z :: AbstractVector) = $meth(nlp.model, x, y, z)
+  @eval NLPModels.$meth(nlp :: QuasiNewtonModel, x :: AbstractVector, y :: AbstractVector, z :: AbstractVector) = $meth(nlp.model, x, y, z)
 end
-jac_structure!(nlp :: QuasiNewtonModel, rows :: AbstractVector{<: Integer}, cols :: AbstractVector{<: Integer}) = jac_structure!(nlp.model, rows, cols)
-jac_coord!(nlp :: QuasiNewtonModel, x :: AbstractVector, vals :: AbstractVector) =
-    jac_coord!(nlp.model, x, vals)
+NLPModels.jac_structure!(nlp :: QuasiNewtonModel, rows :: AbstractVector{<: Integer}, cols :: AbstractVector{<: Integer}) = jac_structure!(nlp.model, rows, cols)
 
 # the following methods are affected by the Hessian approximation
-hess_op(nlp :: QuasiNewtonModel, x :: AbstractVector; kwargs...) = nlp.op
-hprod(nlp :: QuasiNewtonModel, x :: AbstractVector, v :: AbstractVector; kwargs...) = nlp.op * v
-function hprod!(nlp :: QuasiNewtonModel, x :: AbstractVector,
+NLPModels.hess_op(nlp :: QuasiNewtonModel, x :: AbstractVector; kwargs...) = nlp.op
+NLPModels.hprod(nlp :: QuasiNewtonModel, x :: AbstractVector, v :: AbstractVector; kwargs...) = nlp.op * v
+function NLPModels.hprod!(nlp :: QuasiNewtonModel, x :: AbstractVector,
                 v :: AbstractVector, Hv :: AbstractVector; kwargs...)
   Hv[1:nlp.meta.nvar] .= nlp.op * v
   return Hv

@@ -3,7 +3,7 @@ using Dates, Git, JSON, Pkg
 """
     test_breakage()
 
-Downloads a package (given by ENV["PKG"]) and check if its tests pass using the pull request version of NLPModels.jl.
+Downloads a package (given by ENV["PKG"]) and check if its tests pass using the pull request version of NLPModelsModifiers.jl.
 Packages are checked in two situations:
 
 - stable version (ENV["stable"])
@@ -63,7 +63,7 @@ function test_breakage()
               :datetime => Dates.now()
              )
   cd(thispath)
-  repo = "JuliaSmoothOptimizers/NLPModels.jl"
+  repo = "JuliaSmoothOptimizers/NLPModelsModifiers.jl"
   user = split(repo, "/")[1]
   upstream = "https://$user:$key@github.com/$repo"
   Git.run(`remote add upstream $upstream`)

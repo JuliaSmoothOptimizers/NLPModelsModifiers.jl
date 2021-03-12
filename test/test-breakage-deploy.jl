@@ -13,7 +13,7 @@ function test_breakage_deploy()
     error("GITHUB_AUTH not found")
   end
   key = ENV["GITHUB_AUTH"]
-  repo = "JuliaSmoothOptimizers/NLPModels.jl"
+  repo = "JuliaSmoothOptimizers/NLPModelsModifiers.jl"
   user = split(repo, "/")[1]
   upstream = "https://$user:$key@github.com/$repo"
   Git.run(`config user.email "abel.s.siqueira@gmail.com"`)
@@ -46,7 +46,7 @@ function test_breakage_deploy()
   @debug(output)
 
   myauth = GitHub.authenticate(key)
-  myrepo = GitHub.repo(repo, auth=myauth) # "JuliaSmoothOptimizers/NLPModels.jl"
+  myrepo = GitHub.repo(repo, auth=myauth) # "JuliaSmoothOptimizers/NLPModelsModifiers.jl"
   prs = pull_requests(myrepo, auth=myauth)
   pr = nothing
   prnumber = ENV["GITHUB_REF"]
