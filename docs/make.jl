@@ -1,20 +1,19 @@
-using Documenter, NLPModels
+using Documenter, NLPModelsModifiers
 
 makedocs(
-  modules = [NLPModels],
+  modules = [NLPModelsModifiers],
   doctest = true,
   linkcheck = false,
   strict = true,
   format = Documenter.HTML(assets = ["assets/style.css"], prettyurls = get(ENV, "CI", nothing) == "true"),
-  sitename = "NLPModels.jl",
+  sitename = "NLPModelsModifiers.jl",
   pages = ["Home" => "index.md",
            "Models" => "models.md",
-           "Guidelines" => "guidelines.md",
-           "Tools" => "tools.md",
-           "Tutorial" => "tutorial.md",
-           "API" => "api.md",
            "Reference" => "reference.md"
           ]
 )
 
-deploydocs(repo = "github.com/JuliaSmoothOptimizers/NLPModels.jl.git")
+deploydocs(
+  repo = "github.com/JuliaSmoothOptimizers/NLPModelsModifiers.jl.git",
+  push_preview = true
+)

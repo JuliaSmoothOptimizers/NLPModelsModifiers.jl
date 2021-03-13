@@ -1,6 +1,6 @@
 {
-  "description": "Nonlinear Optimization Models for Julia",
-  "title": "NLPModels.jl",
+  "description": "Model modifiers for NLPModels",
+  "title": "NLPModelsModifiers.jl",
   "upload_type": "software",
   "creators": [
     {

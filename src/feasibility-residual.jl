@@ -20,7 +20,7 @@ function NLPModels.``F(x,s) = c(x) - s``:
                       & c_L ≤ s ≤ c_U.
 \\end{aligned}
 ```
-Notice that this problem is an `AbstractNLSModel`, thus the residual value, Jacobian and Hessian are explicitly defined through the [NLS API](@ref nls-api).
+Notice that this problem is an `AbstractNLSModel`, thus the residual value, Jacobian and Hessian are explicitly defined through the NLS API.
 The slack variables are created using SlackModel.
 If ``\\ell_i = u_i``, no slack variable is created.
 In particular, if there are only equality constrained of the form ``c(x) = 0``, the resulting NLS is simply ``\\min_x \\tfrac{1}{2}\\|c(x)\\|^2``.
