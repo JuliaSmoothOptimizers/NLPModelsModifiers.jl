@@ -7,7 +7,7 @@ The models in this package specialize on modifying existing methods.
 
 ## How to Cite
 
-[![DOI](https://zenodo.org/badge/DOI/---.svg)](https://doi.org/---)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4603924.svg)](https://doi.org/10.5281/zenodo.4603924)
 [![GitHub release](https://img.shields.io/github/release/JuliaSmoothOptimizers/NLPModelsModifiers.jl.svg)](https://github.com/JuliaSmoothOptimizers/NLPModelsModifiers.jl/releases/latest)
 [![](https://img.shields.io/badge/docs-stable-3f51b5.svg)](https://JuliaSmoothOptimizers.github.io/NLPModelsModifiers.jl/stable)
 [![](https://img.shields.io/badge/docs-latest-3f51b5.svg)](https://JuliaSmoothOptimizers.github.io/NLPModelsModifiers.jl/dev)
