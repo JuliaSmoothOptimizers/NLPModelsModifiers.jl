@@ -1,6 +1,5 @@
 export FeasibilityFormNLS
 
-
 """Converts a nonlinear least-squares problem with residual ``F(x)`` to a nonlinear
 optimization problem with constraints ``F(x) = r`` and objective ``\\tfrac{1}{2}\\|r\\|^2``.
 In other words, converts
@@ -30,7 +29,9 @@ mutable struct FeasibilityFormNLS{M <: AbstractNLSModel} <: AbstractNLSModel
   counters :: NLSCounters
 end
 
-show_header(io :: IO, nls :: FeasibilityFormNLS) = println(io, "FeasibilityFormNLS - Nonlinear least-squares moving the residual to constraints")
+function NLPModels.show_header(io :: IO, nls :: FeasibilityFormNLS)
+  println(io, "FeasibilityFormNLS - Nonlinear least-squares moving the residual to constraints")
+end
 
 """
     FeasibilityFormNLS(nls)
@@ -65,7 +66,8 @@ function FeasibilityFormNLS(nls :: AbstractNLSModel; name="$(nls.meta.name)-ffnl
   return nlp
 end
 
-function obj(nlp :: FeasibilityFormNLS, x :: AbstractVector)
+
+function NLPModels.obj(nlp :: FeasibilityFormNLS, x :: AbstractVector)
   @lencheck nlp.meta.nvar x
   increment!(nlp, :neval_obj)
   n = nlp.internal.meta.nvar
@@ -73,7 +75,7 @@ function obj(nlp :: FeasibilityFormNLS, x :: AbstractVector)
   return dot(r, r) / 2
 end
 
-function grad!(nlp :: FeasibilityFormNLS, x :: AbstractVector, g :: AbstractVector)
+function NLPModels.grad!(nlp :: FeasibilityFormNLS, x :: AbstractVector, g :: AbstractVector)
   @lencheck nlp.meta.nvar x g
   increment!(nlp, :neval_grad)
   n = nlp.internal.meta.nvar
@@ -82,7 +84,7 @@ function grad!(nlp :: FeasibilityFormNLS, x :: AbstractVector, g :: AbstractVect
   return g
 end
 
-function objgrad!(nlp :: FeasibilityFormNLS, x :: Array{Float64}, g :: Array{Float64})
+function NLPModels.objgrad!(nlp :: FeasibilityFormNLS, x :: Array{Float64}, g :: Array{Float64})
   @lencheck nlp.meta.nvar x g
   increment!(nlp, :neval_obj)
   increment!(nlp, :neval_grad)
@@ -94,7 +96,7 @@ function objgrad!(nlp :: FeasibilityFormNLS, x :: Array{Float64}, g :: Array{Flo
   return f, g
 end
 
-function cons!(nlp :: FeasibilityFormNLS, xr :: AbstractVector, c :: AbstractVector)
+function NLPModels.cons!(nlp :: FeasibilityFormNLS, xr :: AbstractVector, c :: AbstractVector)
   @lencheck nlp.meta.nvar xr
   @lencheck nlp.meta.ncon c
   increment!(nlp, :neval_cons)
@@ -109,7 +111,7 @@ function cons!(nlp :: FeasibilityFormNLS, xr :: AbstractVector, c :: AbstractVec
   return c
 end
 
-function jac_structure!(nlp :: FeasibilityFormNLS, rows :: AbstractVector{<: Integer}, cols :: AbstractVector{<: Integer})
+function NLPModels.jac_structure!(nlp :: FeasibilityFormNLS, rows :: AbstractVector{<: Integer}, cols :: AbstractVector{<: Integer})
   @lencheck nlp.meta.nnzj rows cols
   n, m, ne = nlp.internal.meta.nvar, nlp.internal.meta.ncon, nlp.internal.nls_meta.nequ
   nnzjF = nlp.internal.nls_meta.nnzj
@@ -124,7 +126,7 @@ function jac_structure!(nlp :: FeasibilityFormNLS, rows :: AbstractVector{<: Int
   return rows, cols
 end
 
-function jac_coord!(nlp :: FeasibilityFormNLS, xr :: AbstractVector, vals :: AbstractVector)
+function NLPModels.jac_coord!(nlp :: FeasibilityFormNLS, xr :: AbstractVector, vals :: AbstractVector)
   @lencheck nlp.meta.nvar xr
   @lencheck nlp.meta.nnzj vals
   n, m, ne = nlp.internal.meta.nvar, nlp.internal.meta.ncon, nlp.internal.nls_meta.nequ
@@ -141,7 +143,7 @@ function jac_coord!(nlp :: FeasibilityFormNLS, xr :: AbstractVector, vals :: Abs
   return vals
 end
 
-function jprod!(nlp :: FeasibilityFormNLS, xr :: AbstractVector, v :: AbstractVector, jv :: AbstractVector)
+function NLPModels.jprod!(nlp :: FeasibilityFormNLS, xr :: AbstractVector, v :: AbstractVector, jv :: AbstractVector)
   @lencheck nlp.meta.nvar xr v
   @lencheck nlp.meta.ncon jv
   increment!(nlp, :neval_jprod)
@@ -155,7 +157,7 @@ function jprod!(nlp :: FeasibilityFormNLS, xr :: AbstractVector, v :: AbstractVe
   return jv
 end
 
-function jtprod!(nlp :: FeasibilityFormNLS, xr :: AbstractVector, v :: AbstractVector, jtv :: AbstractVector)
+function NLPModels.jtprod!(nlp :: FeasibilityFormNLS, xr :: AbstractVector, v :: AbstractVector, jtv :: AbstractVector)
   @lencheck nlp.meta.nvar xr jtv
   @lencheck nlp.meta.ncon v
   increment!(nlp, :neval_jtprod)
@@ -169,7 +171,7 @@ function jtprod!(nlp :: FeasibilityFormNLS, xr :: AbstractVector, v :: AbstractV
   return jtv
 end
 
-function hess_structure!(nlp :: FeasibilityFormNLS, rows :: AbstractVector{<: Integer}, cols :: AbstractVector{<: Integer})
+function NLPModels.hess_structure!(nlp :: FeasibilityFormNLS, rows :: AbstractVector{<: Integer}, cols :: AbstractVector{<: Integer})
   @lencheck nlp.meta.nnzh rows cols
   n, m, ne = nlp.internal.meta.nvar, nlp.internal.meta.ncon, nlp.internal.nls_meta.nequ
   nnzhF = nlp.internal.nls_meta.nnzh
@@ -186,7 +188,7 @@ function hess_structure!(nlp :: FeasibilityFormNLS, rows :: AbstractVector{<: In
   return rows, cols
 end
 
-function hess_coord!(nlp :: FeasibilityFormNLS, xr :: AbstractVector, y :: AbstractVector, vals :: AbstractVector;
+function NLPModels.hess_coord!(nlp :: FeasibilityFormNLS, xr :: AbstractVector, y :: AbstractVector, vals :: AbstractVector;
                      obj_weight :: Float64=1.0)
   @lencheck nlp.meta.nvar xr
   @lencheck nlp.meta.ncon y
@@ -208,14 +210,14 @@ function hess_coord!(nlp :: FeasibilityFormNLS, xr :: AbstractVector, y :: Abstr
   return vals
 end
 
-function hess(nlp :: FeasibilityFormNLS, xr :: AbstractVector; obj_weight :: Float64=1.0)
+function NLPModels.hess(nlp :: FeasibilityFormNLS, xr :: AbstractVector; obj_weight :: Float64=1.0)
   @lencheck nlp.meta.nvar xr
   increment!(nlp, :neval_hess)
   n, ne = nlp.internal.meta.nvar, nlp.internal.nls_meta.nequ
   return [spzeros(n, n + ne); spzeros(ne, n) obj_weight * I]
 end
 
-function hess(nlp :: FeasibilityFormNLS, xr :: AbstractVector, y :: AbstractVector;
+function NLPModels.hess(nlp :: FeasibilityFormNLS, xr :: AbstractVector, y :: AbstractVector;
               obj_weight :: Float64=1.0)
   @lencheck nlp.meta.nvar xr
   @lencheck nlp.meta.ncon y
@@ -227,7 +229,7 @@ function hess(nlp :: FeasibilityFormNLS, xr :: AbstractVector, y :: AbstractVect
   return [Hx spzeros(n, ne); spzeros(ne, n) obj_weight * I]
 end
 
-function hprod!(nlp :: FeasibilityFormNLS, xr :: AbstractVector, y :: AbstractVector, v :: AbstractVector, hv :: AbstractVector;
+function NLPModels.hprod!(nlp :: FeasibilityFormNLS, xr :: AbstractVector, y :: AbstractVector, v :: AbstractVector, hv :: AbstractVector;
     obj_weight :: Float64=1.0)
   @lencheck nlp.meta.nvar xr v hv
   @lencheck nlp.meta.ncon y
@@ -245,7 +247,7 @@ function hprod!(nlp :: FeasibilityFormNLS, xr :: AbstractVector, y :: AbstractVe
   return hv
 end
 
-function ghjvprod!(nlp :: FeasibilityFormNLS, x :: AbstractVector, g :: AbstractVector, v :: AbstractVector, gHv :: AbstractVector)
+function NLPModels.ghjvprod!(nlp :: FeasibilityFormNLS, x :: AbstractVector, g :: AbstractVector, v :: AbstractVector, gHv :: AbstractVector)
   @lencheck nlp.meta.nvar x g v
   @lencheck nlp.meta.ncon gHv
   increment!(nlp, :neval_hprod)
@@ -259,7 +261,7 @@ function ghjvprod!(nlp :: FeasibilityFormNLS, x :: AbstractVector, g :: Abstract
   return gHv
 end
 
-function residual!(nlp :: FeasibilityFormNLS, x :: AbstractVector, Fx :: AbstractVector)
+function NLPModels.residual!(nlp :: FeasibilityFormNLS, x :: AbstractVector, Fx :: AbstractVector)
   @lencheck nlp.meta.nvar x
   @lencheck nlp.nls_meta.nequ Fx
   increment!(nlp, :neval_residual)
@@ -268,7 +270,7 @@ function residual!(nlp :: FeasibilityFormNLS, x :: AbstractVector, Fx :: Abstrac
   return Fx
 end
 
-function jac_structure_residual!(nlp :: FeasibilityFormNLS, rows :: AbstractVector{<: Integer}, cols :: AbstractVector{<: Integer})
+function NLPModels.jac_structure_residual!(nlp :: FeasibilityFormNLS, rows :: AbstractVector{<: Integer}, cols :: AbstractVector{<: Integer})
   @lencheck nlp.nls_meta.nnzj rows cols
   n, ne = nlp.internal.meta.nvar, nlp.internal.nls_meta.nequ
   rows .= 1:ne
@@ -276,7 +278,7 @@ function jac_structure_residual!(nlp :: FeasibilityFormNLS, rows :: AbstractVect
   return rows, cols
 end
 
-function jac_coord_residual!(nlp :: FeasibilityFormNLS, x :: AbstractVector, vals :: AbstractVector)
+function NLPModels.jac_coord_residual!(nlp :: FeasibilityFormNLS, x :: AbstractVector, vals :: AbstractVector)
   @lencheck nlp.meta.nvar x
   @lencheck nlp.nls_meta.nnzj vals
   increment!(nlp, :neval_jac_residual)
@@ -284,7 +286,7 @@ function jac_coord_residual!(nlp :: FeasibilityFormNLS, x :: AbstractVector, val
   return vals
 end
 
-function jprod_residual!(nlp :: FeasibilityFormNLS, x :: AbstractVector, v :: AbstractVector, Jv :: AbstractVector)
+function NLPModels.jprod_residual!(nlp :: FeasibilityFormNLS, x :: AbstractVector, v :: AbstractVector, Jv :: AbstractVector)
   @lencheck nlp.meta.nvar x v
   @lencheck nlp.nls_meta.nequ Jv
   increment!(nlp, :neval_jprod_residual)
@@ -293,7 +295,7 @@ function jprod_residual!(nlp :: FeasibilityFormNLS, x :: AbstractVector, v :: Ab
   return Jv
 end
 
-function jtprod_residual!(nlp :: FeasibilityFormNLS, x :: AbstractVector, v :: AbstractVector, Jtv :: AbstractVector)
+function NLPModels.jtprod_residual!(nlp :: FeasibilityFormNLS, x :: AbstractVector, v :: AbstractVector, Jtv :: AbstractVector)
   @lencheck nlp.meta.nvar x Jtv
   @lencheck nlp.nls_meta.nequ v
   increment!(nlp, :neval_jtprod_residual)
@@ -303,12 +305,12 @@ function jtprod_residual!(nlp :: FeasibilityFormNLS, x :: AbstractVector, v :: A
   return Jtv
 end
 
-function hess_structure_residual!(nlp :: FeasibilityFormNLS, rows :: AbstractVector{<: Integer}, cols :: AbstractVector{<: Integer})
+function NLPModels.hess_structure_residual!(nlp :: FeasibilityFormNLS, rows :: AbstractVector{<: Integer}, cols :: AbstractVector{<: Integer})
   @lencheck nlp.nls_meta.nnzh rows cols
   return rows, cols  # Hessian of residual is zero; do not change rows and cols
 end
 
-function hess_coord_residual!(nlp :: FeasibilityFormNLS, x :: AbstractVector, v :: AbstractVector, vals :: AbstractVector)
+function NLPModels.hess_coord_residual!(nlp :: FeasibilityFormNLS, x :: AbstractVector, v :: AbstractVector, vals :: AbstractVector)
   @lencheck nlp.meta.nvar x
   @lencheck nlp.nls_meta.nequ v
   @lencheck nlp.nls_meta.nnzh vals
@@ -316,14 +318,14 @@ function hess_coord_residual!(nlp :: FeasibilityFormNLS, x :: AbstractVector, v 
   return vals
 end
 
-function jth_hess_residual(nlp :: FeasibilityFormNLS, x :: AbstractVector, i :: Int)
+function NLPModels.jth_hess_residual(nlp :: FeasibilityFormNLS, x :: AbstractVector, i :: Int)
   @lencheck nlp.meta.nvar x
   increment!(nlp, :neval_jhess_residual)
   n = nlp.meta.nvar
   return spzeros(n, n)
 end
 
-function hprod_residual!(nlp :: FeasibilityFormNLS, x :: AbstractVector, i :: Int, v :: AbstractVector, Hiv :: AbstractVector)
+function NLPModels.hprod_residual!(nlp :: FeasibilityFormNLS, x :: AbstractVector, i :: Int, v :: AbstractVector, Hiv :: AbstractVector)
   @lencheck nlp.meta.nvar x v Hiv
   increment!(nlp, :neval_hprod_residual)
   fill!(Hiv, 0.0)

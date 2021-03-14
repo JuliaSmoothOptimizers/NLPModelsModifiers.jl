@@ -1,9 +1,7 @@
-using LinearOperators
-
 function check_qn_model(qnmodel)
   rtol  = 1e-8
   model = qnmodel.model
-  @assert typeof(qnmodel) <: NLPModels.QuasiNewtonModel
+  @assert typeof(qnmodel) <: QuasiNewtonModel
   @assert qnmodel.meta.nvar == model.meta.nvar
   @assert qnmodel.meta.ncon == model.meta.ncon
 
@@ -43,22 +41,15 @@ function check_qn_model(qnmodel)
   reset!(qnmodel)
 end
 
-for problem in ["hs10", "hs11", "hs14", "lincon", "linsv"]
-  problem_f = eval(Symbol(problem * "_autodiff"))
-  nlp = problem_f()
-  @printf("Checking LBFGS formulation of %-8s\t", problem)
-  qn_model = LBFGSModel(nlp)
-  check_qn_model(qn_model)
-  qn_model = LBFGSModel(nlp, mem=2)
-  check_qn_model(qn_model)
-  @printf("✓\n")
-  @printf("Checking LSR1 formulation of %-8s\t", problem)
-  qn_model = LSR1Model(nlp)
-  check_qn_model(qn_model)
-  qn_model = LSR1Model(nlp, mem=2)
-  check_qn_model(qn_model)
-  @printf("✓\n")
-end
+nlp = SimpleNLPModel()
+qn_model = LBFGSModel(nlp)
+check_qn_model(qn_model)
+qn_model = LBFGSModel(nlp, mem=2)
+check_qn_model(qn_model)
+qn_model = LSR1Model(nlp)
+check_qn_model(qn_model)
+qn_model = LSR1Model(nlp, mem=2)
+check_qn_model(qn_model)
 
 @testset "objgrad of a qnmodel" begin
   struct OnlyObjgradModel <: AbstractNLPModel
