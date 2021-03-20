@@ -57,6 +57,10 @@ NLPModels.jac_structure!(nlp :: QuasiNewtonModel, rows :: AbstractVector{<: Inte
 NLPModels.hess_op(nlp :: QuasiNewtonModel, x :: AbstractVector; kwargs...) = nlp.op
 NLPModels.hprod(nlp :: QuasiNewtonModel, x :: AbstractVector, v :: AbstractVector; kwargs...) = nlp.op * v
 function NLPModels.hprod!(nlp :: QuasiNewtonModel, x :: AbstractVector,
+                y :: AbstractVector, v :: AbstractVector, Hv :: AbstractVector; kwargs...)
+  return hprod!(nlp, x, v, Hv; kwargs...)
+end
+function NLPModels.hprod!(nlp :: QuasiNewtonModel, x :: AbstractVector,
                 v :: AbstractVector, Hv :: AbstractVector; kwargs...)
   Hv[1:nlp.meta.nvar] .= nlp.op * v
   return Hv
