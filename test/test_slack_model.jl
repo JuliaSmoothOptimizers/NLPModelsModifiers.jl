@@ -23,46 +23,50 @@
   # test problems that actually have inequality constraints
 
   function check_slack_model(smodel)
-    rtol  = 1e-8
+    rtol = 1e-8
     model = smodel.model
     @test typeof(smodel) == NLPModels.SlackModel
     n = model.meta.nvar   # number of variables in original model
     N = smodel.meta.nvar  # number of variables in slack model
-    jlow = model.meta.jlow; nlow = length(jlow)
-    jupp = model.meta.jupp; nupp = length(jupp)
-    jrng = model.meta.jrng; nrng = length(jrng)
-    jfix = model.meta.jfix; nfix = length(jfix)
+    jlow = model.meta.jlow
+    nlow = length(jlow)
+    jupp = model.meta.jupp
+    nupp = length(jupp)
+    jrng = model.meta.jrng
+    nrng = length(jrng)
+    jfix = model.meta.jfix
+    nfix = length(jfix)
 
     @test N == n + model.meta.ncon - nfix
     @test smodel.meta.ncon == model.meta.ncon
 
     x = [-(-1.0)^i for i = 1:N]
-    s = x[n+1:N]
-    y = [-(-1.0)^i for i = 1:smodel.meta.ncon]
+    s = x[(n + 1):N]
+    y = [-(-1.0)^i for i = 1:(smodel.meta.ncon)]
 
     # slack variables do not influence objective value
-    @test isapprox(obj(model, x[1:n]), obj(smodel, x), rtol=rtol)
+    @test isapprox(obj(model, x[1:n]), obj(smodel, x), rtol = rtol)
     @test neval_obj(model) == 2
 
     g = grad(model, x[1:n])
     G = grad(smodel, x)
-    @test isapprox(g, G[1:n], rtol=rtol)
-    @test all(i -> (i ≈ 0), G[n+1:N])
+    @test isapprox(g, G[1:n], rtol = rtol)
+    @test all(i -> (i ≈ 0), G[(n + 1):N])
     @test neval_grad(model) == 2
 
     h = hess(model, x[1:n], y)
     H = hess(smodel, x, y)
-    @test isapprox(H[1:n, 1:n], h, rtol=rtol)
-    @test all(i -> (i ≈ 0), H[1:n, n+1:N])
-    @test all(i -> (i ≈ 0), H[n+1:N, 1:n])
-    @test all(i -> (i ≈ 0), H[n+1:N, n+1:N])
+    @test isapprox(H[1:n, 1:n], h, rtol = rtol)
+    @test all(i -> (i ≈ 0), H[1:n, (n + 1):N])
+    @test all(i -> (i ≈ 0), H[(n + 1):N, 1:n])
+    @test all(i -> (i ≈ 0), H[(n + 1):N, (n + 1):N])
     @test neval_hess(model) == 2
 
     v = [-(-1.0)^i for i = 1:N]
     hv = hprod(model, x[1:n], y, v[1:n])
     HV = hprod(smodel, x, y, v)
-    @test isapprox(HV[1:n], hv, rtol=rtol)
-    @test all(i -> (i ≈ 0), HV[n+1:N])
+    @test isapprox(HV[1:n], hv, rtol = rtol)
+    @test all(i -> (i ≈ 0), HV[(n + 1):N])
     @test neval_hprod(model) == 2
 
     c = cons(model, x[1:n])
@@ -71,17 +75,17 @@
     # slack variables do not influence equality constraints
     @test all(C[jfix] ≈ c[jfix])
     @test all(C[jlow] ≈ c[jlow] - s[1:nlow])
-    @test all(C[jupp] ≈ c[jupp] - s[nlow+1:nlow+nupp])
-    @test all(C[jrng] ≈ c[jrng] - s[nlow+nupp+1:nlow+nupp+nrng])
+    @test all(C[jupp] ≈ c[jupp] - s[(nlow + 1):(nlow + nupp)])
+    @test all(C[jrng] ≈ c[jrng] - s[(nlow + nupp + 1):(nlow + nupp + nrng)])
     @test neval_cons(model) == 2
 
     j = jac(model, x[1:n])
     J = jac(smodel, x)
-    K = J[:, n+1:N]
+    K = J[:, (n + 1):N]
     @test all(J[:, 1:n] ≈ j)
     k = 1
-    for l in collect([jlow ; jupp ; jrng])
-      @test J[l, n+k] ≈ -1
+    for l in collect([jlow; jupp; jrng])
+      @test J[l, n + k] ≈ -1
       K[l, k] = 0
       k += 1
     end
@@ -94,7 +98,7 @@
     jv = zeros(smodel.meta.ncon)
     @test all(jprod!(smodel, x, v, jv) ≈ Jv)
 
-    u = [-(-1.0)^i for i = 1:smodel.meta.ncon]
+    u = [-(-1.0)^i for i = 1:(smodel.meta.ncon)]
     Jtu = J' * u
     @test all(jtprod(smodel, x, u) ≈ Jtu)
     jtu = zeros(N)
@@ -114,7 +118,7 @@
 end
 
 @testset "Test that type is maintained (#217)" begin
-  nlp = ADNLPModel(x -> dot(x, x), ones(Float16, 2), x->sum(x), [-1.0], [1.0])
+  nlp = ADNLPModel(x -> dot(x, x), ones(Float16, 2), x -> sum(x), [-1.0], [1.0])
   snlp = SlackModel(nlp)
   @test eltype(snlp.meta.x0) == Float16
 end

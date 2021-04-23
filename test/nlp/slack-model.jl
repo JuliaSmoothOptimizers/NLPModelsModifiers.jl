@@ -2,10 +2,10 @@
   @testset "API" begin
     f(x) = (x[1] - 2)^2 + (x[2] - 1)^2
     ∇f(x) = [2 * (x[1] - 2); 2 * (x[2] - 1); 0]
-    H(x) = [2.0  0  0; 0  2.0  0; 0 0 0]
+    H(x) = [2.0 0 0; 0 2.0 0; 0 0 0]
     c(x) = [x[1] - 2x[2] + 1; -x[1]^2 / 4 - x[2]^2 + 1 - x[3]]
-    J(x) = [1.0  -2.0  0; -0.5x[1]  -2.0x[2]  -1]
-    H(x,y) = H(x) + y[2] * [-0.5  0 0; 0  -2.0  0; 0 0 0]
+    J(x) = [1.0 -2.0 0; -0.5x[1] -2.0x[2] -1]
+    H(x, y) = H(x) + y[2] * [-0.5 0 0; 0 -2.0 0; 0 0 0]
 
     nlp = SlackModel(SimpleNLPModel())
     n = nlp.meta.nvar
@@ -29,7 +29,7 @@
     @test jac(nlp, x) ≈ J(x)
     @test jprod(nlp, x, v) ≈ J(x) * v
     @test jtprod(nlp, x, w) ≈ J(x)' * w
-    @test hess(nlp, x, y) ≈ tril(H(x,y))
+    @test hess(nlp, x, y) ≈ tril(H(x, y))
     @test hprod(nlp, x, y, v) ≈ H(x, y) * v
 
     # Increasing coverage

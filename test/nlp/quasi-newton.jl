@@ -3,9 +3,9 @@
     f(x) = (x[1] - 2)^2 + (x[2] - 1)^2
     ∇f(x) = [2 * (x[1] - 2); 2 * (x[2] - 1)]
     c(x) = [x[1] - 2x[2] + 1; -x[1]^2 / 4 - x[2]^2 + 1]
-    J(x) = [1.0  -2.0; -0.5x[1]  -2.0x[2]]
+    J(x) = [1.0 -2.0; -0.5x[1] -2.0x[2]]
 
-    for (QNM,QNO) in [(LSR1Model, LSR1Operator), (LBFGSModel, LBFGSOperator)]
+    for (QNM, QNO) in [(LSR1Model, LSR1Operator), (LBFGSModel, LBFGSOperator)]
       nlp = QNM(SimpleNLPModel())
       n = nlp.meta.nvar
       m = nlp.meta.ncon
@@ -15,7 +15,7 @@
       push!(B, s, y)
       push!(nlp, s, y)
       H(x) = B
-      H(x,y) = B
+      H(x, y) = B
 
       y = randn(m)
       x = randn(n)

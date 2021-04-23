@@ -1,8 +1,8 @@
 @testset "FeasibilityResidual tests" begin
   @testset "NLS API" begin
     F(x) = [x[1] - 2x[2] + 1; -x[1]^2 / 4 - x[2]^2 + 1 - x[3]]
-    JF(x) = [1.0 -2.0 0; -0.5x[1]  -2.0x[2]  -1]
-    HF(x,w) = w[2] * diagm(0 => [-0.5; -2.0; 0.0])
+    JF(x) = [1.0 -2.0 0; -0.5x[1] -2.0x[2] -1]
+    HF(x, w) = w[2] * diagm(0 => [-0.5; -2.0; 0.0])
 
     nls = FeasibilityResidual(SimpleNLPModel())
     n = nls.meta.nvar
@@ -20,8 +20,15 @@
     @test hess_residual(nls, x, w) ≈ HF(x, w)
     @test jprod_residual(nls, x, v) ≈ JF(x) * v
     @test jtprod_residual(nls, x, w) ≈ JF(x)' * w
-    @test jprod_residual!(nls, jac_structure_residual(nls)..., jac_coord_residual(nls, x), v, Jv) ≈ JF(x) * v
-    @test jtprod_residual!(nls, jac_structure_residual(nls)..., jac_coord_residual(nls, x), w, Jtw) ≈ JF(x)' * w
+    @test jprod_residual!(nls, jac_structure_residual(nls)..., jac_coord_residual(nls, x), v, Jv) ≈
+          JF(x) * v
+    @test jtprod_residual!(
+      nls,
+      jac_structure_residual(nls)...,
+      jac_coord_residual(nls, x),
+      w,
+      Jtw,
+    ) ≈ JF(x)' * w
     @test jprod_residual!(nls, x, jac_structure_residual(nls)..., v, Jv) ≈ JF(x) * v
     @test jtprod_residual!(nls, x, jac_structure_residual(nls)..., w, Jtw) ≈ JF(x)' * w
     Jop = jac_op_residual(nls, x)
@@ -55,8 +62,8 @@
 
   @testset "NLP API" begin
     F(x) = [x[1] - 2x[2] + 1; -x[1]^2 / 4 - x[2]^2 + 1 - x[3]]
-    JF(x) = [1.0 -2.0 0; -0.5x[1]  -2.0x[2]  -1]
-    HF(x,w) = w[2] * diagm(0 => [-0.5; -2.0; 0.0])
+    JF(x) = [1.0 -2.0 0; -0.5x[1] -2.0x[2] -1]
+    HF(x, w) = w[2] * diagm(0 => [-0.5; -2.0; 0.0])
     f(x) = norm(F(x))^2 / 2
     ∇f(x) = JF(x)' * F(x)
     H(x) = JF(x)' * JF(x) + HF(x, F(x))
@@ -118,7 +125,7 @@
 
   @testset "FeasibilityResidual of an unconstrained problem" begin
     mutable struct UncModel <: AbstractNLPModel
-      meta :: NLPModelMeta
+      meta::NLPModelMeta
     end
     nlp = UncModel(NLPModelMeta(2))
     @test_throws ErrorException FeasibilityResidual(nlp)
