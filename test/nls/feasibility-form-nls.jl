@@ -2,7 +2,7 @@
   @testset "NLS API" begin
     F(x) = [x[3]; x[4]]
     JF(x) = Float64[0 0 1 0; 0 0 0 1]
-    HF(x,w) = zeros(4, 4)
+    HF(x, w) = zeros(4, 4)
 
     nls = FeasibilityFormNLS(SimpleNLSModel())
     n = nls.meta.nvar
@@ -21,8 +21,15 @@
     @test hess_residual(nls, x, w) ≈ HF(x, w)
     @test jprod_residual(nls, x, v) ≈ JF(x) * v
     @test jtprod_residual(nls, x, w) ≈ JF(x)' * w
-    @test jprod_residual!(nls, jac_structure_residual(nls)..., jac_coord_residual(nls, x), v, Jv) ≈ JF(x) * v
-    @test jtprod_residual!(nls, jac_structure_residual(nls)..., jac_coord_residual(nls, x), w, Jtw) ≈ JF(x)' * w
+    @test jprod_residual!(nls, jac_structure_residual(nls)..., jac_coord_residual(nls, x), v, Jv) ≈
+          JF(x) * v
+    @test jtprod_residual!(
+      nls,
+      jac_structure_residual(nls)...,
+      jac_coord_residual(nls, x),
+      w,
+      Jtw,
+    ) ≈ JF(x)' * w
     @test jprod_residual!(nls, x, jac_structure_residual(nls)..., v, Jv) ≈ JF(x) * v
     @test jtprod_residual!(nls, x, jac_structure_residual(nls)..., w, Jtw) ≈ JF(x)' * w
     Jop = jac_op_residual(nls, x)
@@ -54,13 +61,19 @@
   @testset "NLP API" begin
     F(x) = [x[3]; x[4]]
     JF(x) = Float64[0 0 1 0; 0 0 0 1]
-    HF(x,w) = zeros(4, 4)
+    HF(x, w) = zeros(4, 4)
     f(x) = norm(F(x))^2 / 2
     ∇f(x) = JF(x)' * F(x)
     H(x) = JF(x)' * JF(x) + HF(x, F(x))
-    c(x) = [1 - x[1] - x[3]; 10 * (x[2] - x[1]^2) - x[4]; x[1] + x[2]^2; x[1]^2 + x[2]; x[1]^2 + x[2]^2 - 1]
+    c(x) = [
+      1 - x[1] - x[3]
+      10 * (x[2] - x[1]^2) - x[4]
+      x[1] + x[2]^2
+      x[1]^2 + x[2]
+      x[1]^2 + x[2]^2 - 1
+    ]
     J(x) = [-1 0 -1 0; -20x[1] 10 0 -1; 1 2x[2] 0 0; 2x[1] 1 0 0; 2x[1] 2x[2] 0 0]
-    H(x,y) = H(x) + diagm(0 => [-20y[2] + 2y[4] + 2y[5]; 2y[3] + 2y[5]; 0; 0])
+    H(x, y) = H(x) + diagm(0 => [-20y[2] + 2y[4] + 2y[5]; 2y[3] + 2y[5]; 0; 0])
 
     nls = FeasibilityFormNLS(SimpleNLSModel())
     n = nls.meta.nvar
@@ -84,7 +97,7 @@
     @test jac(nls, x) ≈ J(x)
     @test jprod(nls, x, v) ≈ J(x) * v
     @test jtprod(nls, x, w) ≈ J(x)' * w
-    @test hess(nls, x, y) ≈ tril(H(x,y))
+    @test hess(nls, x, y) ≈ tril(H(x, y))
     @test hprod(nls, x, y, v) ≈ H(x, y) * v
     fx, cx = objcons(nls, x)
     @test fx ≈ f(x)
