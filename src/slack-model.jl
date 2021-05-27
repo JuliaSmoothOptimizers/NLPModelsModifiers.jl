@@ -47,6 +47,7 @@ The slack variables are implicitly ordered as `[s(low), s(upp), s(rng)]`, where
 mutable struct SlackModel <: AbstractNLPModel
   meta::NLPModelMeta
   model::AbstractNLPModel
+  counters::Counters
 end
 
 NLPModels.show_header(io::IO, nlp::SlackModel) =
@@ -64,6 +65,7 @@ mutable struct SlackNLSModel <: AbstractNLSModel
   meta::NLPModelMeta
   nls_meta::NLSMeta
   model::AbstractNLPModel
+  counters::NLSCounters
 end
 
 NLPModels.show_header(io::IO, nls::SlackNLSModel) =
@@ -113,7 +115,7 @@ function SlackModel(model::AbstractNLPModel; name = model.meta.name * "-slack")
 
   meta = slack_meta(model.meta, name = name)
 
-  snlp = SlackModel(meta, model)
+  snlp = SlackModel(meta, model, model.counters)
   finalizer(nlp -> finalize(nlp.model), snlp)
 
   return snlp
@@ -134,7 +136,7 @@ function SlackNLSModel(model::AbstractNLSModel; name = model.meta.name * "-slack
     nln = model.nls_meta.nln,
   )
 
-  snls = SlackNLSModel(meta, nls_meta, model)
+  snls = SlackNLSModel(meta, nls_meta, model, model.counters)
   finalizer(nls -> finalize(nls.model), snls)
 
   return snls

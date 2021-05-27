@@ -104,6 +104,8 @@
     jtu = zeros(N)
     @test all(jtprod!(smodel, x, u, jtu) ≈ Jtu)
 
+    @test smodel.counters == smodel.model.counters
+
     reset!(smodel)
   end
 
