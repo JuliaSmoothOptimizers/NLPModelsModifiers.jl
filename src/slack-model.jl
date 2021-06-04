@@ -44,9 +44,9 @@ The slack variables are implicitly ordered as `[s(low), s(upp), s(rng)]`, where
 ``c_L ≤ c(x) < ∞``, ``-∞ < c(x) ≤ c_U`` and
 ``c_L ≤ c(x) ≤ c_U``, respectively.
 """
-mutable struct SlackModel <: AbstractNLPModel
-  meta::NLPModelMeta
-  model::AbstractNLPModel
+mutable struct SlackModel{T, S} <: AbstractNLPModel{T, S}
+  meta::NLPModelMeta{T, S}
+  model::AbstractNLPModel{T, S}
 end
 
 NLPModels.show_header(io::IO, nlp::SlackModel) =
@@ -60,10 +60,10 @@ end
 
 """Like `SlackModel`, this model converts inequalities into equalities and bounds.
 """
-mutable struct SlackNLSModel <: AbstractNLSModel
-  meta::NLPModelMeta
-  nls_meta::NLSMeta
-  model::AbstractNLPModel
+mutable struct SlackNLSModel{T, S} <: AbstractNLSModel{T, S}
+  meta::NLPModelMeta{T, S}
+  nls_meta::NLSMeta{T, S}
+  model::AbstractNLPModel{T, S}
 end
 
 NLPModels.show_header(io::IO, nls::SlackNLSModel) =
@@ -75,12 +75,11 @@ function Base.show(io::IO, nls::SlackNLSModel)
   show(io, nls.model.counters)
 end
 
-function slack_meta(meta::NLPModelMeta; name = meta.name * "-slack")
+function slack_meta(meta::NLPModelMeta{T, S}; name = meta.name * "-slack") where {T, S}
   ns = meta.ncon - length(meta.jfix)
   jlow = meta.jlow
   jupp = meta.jupp
   jrng = meta.jrng
-  T = eltype(meta.x0)
 
   # Don't introduce slacks for equality constraints!
   lvar = [meta.lvar; meta.lcon[[jlow; jupp; jrng]]]  # l ≤ x  and  cₗ ≤ s
@@ -119,12 +118,15 @@ function SlackModel(model::AbstractNLPModel; name = model.meta.name * "-slack")
   return snlp
 end
 
-function SlackNLSModel(model::AbstractNLSModel; name = model.meta.name * "-slack")
+function SlackNLSModel(
+  model::AbstractNLSModel{T, S};
+  name = model.meta.name * "-slack",
+) where {T, S}
   ns = model.meta.ncon - length(model.meta.jfix)
   ns == 0 && return model
 
   meta = slack_meta(model.meta, name = name)
-  nls_meta = NLSMeta(
+  nls_meta = NLSMeta{T, S}(
     model.nls_meta.nequ,
     model.meta.nvar + ns,
     x0 = [model.meta.x0; zeros(eltype(model.meta.x0), ns)],

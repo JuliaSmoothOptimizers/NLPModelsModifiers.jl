@@ -77,7 +77,7 @@
     io = IOBuffer()
     show(io, nlp)
     showed = String(take!(io))
-    expected = """LSR1Model - A QuasiNewtonModel
+    expected = """LSR1Model{Float64, Vector{Float64}} - A QuasiNewtonModel
     Problem name: Simple NLP Model
      All variables: ████████████████████ 2      All constraints: ████████████████████ 2
               free: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0                 free: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0
@@ -102,7 +102,7 @@
     io = IOBuffer()
     show(io, nlp)
     showed = String(take!(io))
-    expected = """LBFGSModel - A QuasiNewtonModel
+    expected = """LBFGSModel{Float64, Vector{Float64}} - A QuasiNewtonModel
     Problem name: Simple NLP Model
      All variables: ████████████████████ 2      All constraints: ████████████████████ 2
               free: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0                 free: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0
