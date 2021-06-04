@@ -4,60 +4,62 @@
     JF(x) = [1.0 -2.0 0; -0.5x[1] -2.0x[2] -1]
     HF(x, w) = w[2] * diagm(0 => [-0.5; -2.0; 0.0])
 
-    nls = FeasibilityResidual(SimpleNLPModel())
-    n = nls.meta.nvar
-    ne = nls_meta(nls).nequ
+    for dt in [Float64, Float32]
+      nls = FeasibilityResidual(SimpleNLPModel(zero(dt)))
+      n = nls.meta.nvar
+      ne = nls_meta(nls).nequ
 
-    x = randn(n)
-    v = randn(n)
-    w = randn(ne)
-    Jv = zeros(ne)
-    Jtw = zeros(n)
-    Hv = zeros(n)
+      x = randn(n)
+      v = randn(n)
+      w = randn(ne)
+      Jv = zeros(ne)
+      Jtw = zeros(n)
+      Hv = zeros(n)
 
-    @test residual(nls, x) ≈ F(x)
-    @test jac_residual(nls, x) ≈ JF(x)
-    @test hess_residual(nls, x, w) ≈ HF(x, w)
-    @test jprod_residual(nls, x, v) ≈ JF(x) * v
-    @test jtprod_residual(nls, x, w) ≈ JF(x)' * w
-    @test jprod_residual!(nls, jac_structure_residual(nls)..., jac_coord_residual(nls, x), v, Jv) ≈
-          JF(x) * v
-    @test jtprod_residual!(
-      nls,
-      jac_structure_residual(nls)...,
-      jac_coord_residual(nls, x),
-      w,
-      Jtw,
-    ) ≈ JF(x)' * w
-    @test jprod_residual!(nls, x, jac_structure_residual(nls)..., v, Jv) ≈ JF(x) * v
-    @test jtprod_residual!(nls, x, jac_structure_residual(nls)..., w, Jtw) ≈ JF(x)' * w
-    Jop = jac_op_residual(nls, x)
-    @test Jop * v ≈ JF(x) * v
-    @test Jop' * w ≈ JF(x)' * w
-    Jop = jac_op_residual!(nls, x, Jv, Jtw)
-    @test Jop * v ≈ JF(x) * v
-    @test Jop' * w ≈ JF(x)' * w
-    Jop = jac_op_residual!(nls, jac_structure_residual(nls)..., jac_coord_residual(nls, x), Jv, Jtw)
-    @test Jop * v ≈ JF(x) * v
-    @test Jop' * w ≈ JF(x)' * w
-    Jop = jac_op_residual!(nls, x, jac_structure_residual(nls)..., Jv, Jtw)
-    @test Jop * v ≈ JF(x) * v
-    @test Jop' * w ≈ JF(x)' * w
-    I, J, V = findnz(sparse(HF(x, w)))
-    @test hess_structure_residual(nls) == (I, J)
-    @test hess_coord_residual(nls, x, w) ≈ V
-    for j = 1:ne
-      eⱼ = [i == j ? 1.0 : 0.0 for i = 1:ne]
-      @test jth_hess_residual(nls, x, j) ≈ HF(x, eⱼ)
-      @test hprod_residual(nls, x, j, v) ≈ HF(x, eⱼ) * v
-      Hop = hess_op_residual(nls, x, j)
-      @test Hop * v ≈ HF(x, eⱼ) * v
-      Hop = hess_op_residual!(nls, x, j, Hv)
-      @test Hop * v ≈ HF(x, eⱼ) * v
+      @test residual(nls, x) ≈ F(x)
+      @test jac_residual(nls, x) ≈ JF(x)
+      @test hess_residual(nls, x, w) ≈ HF(x, w)
+      @test jprod_residual(nls, x, v) ≈ JF(x) * v
+      @test jtprod_residual(nls, x, w) ≈ JF(x)' * w
+      @test jprod_residual!(nls, jac_structure_residual(nls)..., jac_coord_residual(nls, x), v, Jv) ≈
+            JF(x) * v
+      @test jtprod_residual!(
+        nls,
+        jac_structure_residual(nls)...,
+        jac_coord_residual(nls, x),
+        w,
+        Jtw,
+      ) ≈ JF(x)' * w
+      @test jprod_residual!(nls, x, jac_structure_residual(nls)..., v, Jv) ≈ JF(x) * v
+      @test jtprod_residual!(nls, x, jac_structure_residual(nls)..., w, Jtw) ≈ JF(x)' * w
+      Jop = jac_op_residual(nls, x)
+      @test Jop * v ≈ JF(x) * v
+      @test Jop' * w ≈ JF(x)' * w
+      Jop = jac_op_residual!(nls, x, Jv, Jtw)
+      @test Jop * v ≈ JF(x) * v
+      @test Jop' * w ≈ JF(x)' * w
+      Jop = jac_op_residual!(nls, jac_structure_residual(nls)..., jac_coord_residual(nls, x), Jv, Jtw)
+      @test Jop * v ≈ JF(x) * v
+      @test Jop' * w ≈ JF(x)' * w
+      Jop = jac_op_residual!(nls, x, jac_structure_residual(nls)..., Jv, Jtw)
+      @test Jop * v ≈ JF(x) * v
+      @test Jop' * w ≈ JF(x)' * w
+      I, J, V = findnz(sparse(HF(x, w)))
+      @test hess_structure_residual(nls) == (I, J)
+      @test hess_coord_residual(nls, x, w) ≈ V
+      for j = 1:ne
+        eⱼ = [i == j ? 1.0 : 0.0 for i = 1:ne]
+        @test jth_hess_residual(nls, x, j) ≈ HF(x, eⱼ)
+        @test hprod_residual(nls, x, j, v) ≈ HF(x, eⱼ) * v
+        Hop = hess_op_residual(nls, x, j)
+        @test Hop * v ≈ HF(x, eⱼ) * v
+        Hop = hess_op_residual!(nls, x, j, Hv)
+        @test Hop * v ≈ HF(x, eⱼ) * v
+      end
+      fx, gx = objgrad!(nls, x, v)
+      @test obj(nls, x) ≈ norm(F(x))^2 / 2 ≈ fx
+      @test grad(nls, x) ≈ JF(x)' * F(x) ≈ gx
     end
-    fx, gx = objgrad!(nls, x, v)
-    @test obj(nls, x) ≈ norm(F(x))^2 / 2 ≈ fx
-    @test grad(nls, x) ≈ JF(x)' * F(x) ≈ gx
   end
 
   @testset "NLP API" begin
@@ -68,29 +70,31 @@
     ∇f(x) = JF(x)' * F(x)
     H(x) = JF(x)' * JF(x) + HF(x, F(x))
 
-    nls = FeasibilityResidual(SimpleNLPModel())
-    n = nls.meta.nvar
+    for dt in [Float64, Float32]
+      nls = FeasibilityResidual(SimpleNLPModel(zero(dt)))
+      n = nls.meta.nvar
 
-    x = randn(n)
-    v = randn(n)
-    Hv = zeros(n)
-    Hvals = zeros(nls.meta.nnzh)
+      x = randn(n)
+      v = randn(n)
+      Hv = zeros(n)
+      Hvals = zeros(nls.meta.nnzh)
 
-    fx, gx = objgrad!(nls, x, v)
-    @test obj(nls, x) ≈ norm(F(x))^2 / 2 ≈ fx ≈ f(x)
-    @test grad(nls, x) ≈ JF(x)' * F(x) ≈ gx ≈ ∇f(x)
-    @test hess(nls, x) ≈ tril(H(x))
-    @test hprod(nls, x, v) ≈ H(x) * v
-    fx, gx = objgrad(nls, x)
-    @test fx ≈ f(x)
-    @test gx ≈ ∇f(x)
-    fx, _ = objgrad!(nls, x, gx)
-    @test fx ≈ f(x)
-    @test gx ≈ ∇f(x)
-    Hop = hess_op(nls, x)
-    @test Hop * v ≈ H(x) * v
-    Hop = hess_op!(nls, x, Hv)
-    @test Hop * v ≈ H(x) * v
+      fx, gx = objgrad!(nls, x, v)
+      @test obj(nls, x) ≈ norm(F(x))^2 / 2 ≈ fx ≈ f(x)
+      @test grad(nls, x) ≈ JF(x)' * F(x) ≈ gx ≈ ∇f(x)
+      @test hess(nls, x) ≈ tril(H(x))
+      @test hprod(nls, x, v) ≈ H(x) * v
+      fx, gx = objgrad(nls, x)
+      @test fx ≈ f(x)
+      @test gx ≈ ∇f(x)
+      fx, _ = objgrad!(nls, x, gx)
+      @test fx ≈ f(x)
+      @test gx ≈ ∇f(x)
+      Hop = hess_op(nls, x)
+      @test Hop * v ≈ H(x) * v
+      Hop = hess_op!(nls, x, Hv)
+      @test Hop * v ≈ H(x) * v
+    end
   end
 
   @testset "Show" begin
