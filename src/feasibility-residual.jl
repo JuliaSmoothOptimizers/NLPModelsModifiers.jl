@@ -43,6 +43,8 @@ function FeasibilityResidual(nlp::AbstractNLPModel; name = "$(nlp.meta.name)-fea
   if !equality_constrained(nlp)
     if unconstrained(nlp)
       throw(ErrorException("Can't handle unconstrained problem"))
+    elseif nlp isa AbstractNLSModel
+      return FeasibilityResidual(SlackNLSModel(nlp), name = name)
     else
       return FeasibilityResidual(SlackModel(nlp), name = name)
     end
