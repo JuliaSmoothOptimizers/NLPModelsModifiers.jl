@@ -1,15 +1,18 @@
-function FeasibilityFormNLS(nls::FeasibilityResidual; name = "$(nls.meta.name)-ffnls")
+function FeasibilityFormNLS(
+  nls::FeasibilityResidual{T, S};
+  name = "$(nls.meta.name)-ffnls",
+) where {T, S}
   meta = nls.nlp.meta
   nequ = meta.ncon
   nvar = meta.nvar + nequ
   ncon = meta.ncon
   nnzj = meta.nnzj + nequ
   nnzh = meta.nnzh + nequ
-  meta = NLPModelMeta(
+  meta = NLPModelMeta{T, S}(
     nvar,
-    x0 = [meta.x0; zeros(nequ)],
-    lvar = [meta.lvar; fill(-Inf, nequ)],
-    uvar = [meta.uvar; fill(Inf, nequ)],
+    x0 = [meta.x0; zeros(T, nequ)],
+    lvar = [meta.lvar; fill(T(-Inf), nequ)],
+    uvar = [meta.uvar; fill(T(Inf), nequ)],
     ncon = ncon,
     lcon = meta.lcon,
     ucon = meta.ucon,
@@ -20,9 +23,9 @@ function FeasibilityFormNLS(nls::FeasibilityResidual; name = "$(nls.meta.name)-f
     nnzh = nnzh,
     name = name,
   )
-  nls_meta = NLSMeta(nequ, nvar, x0 = [meta.x0; zeros(nequ)], nnzj = nequ, nnzh = 0)
+  nls_meta = NLSMeta{T, S}(nequ, nvar, x0 = [meta.x0; zeros(T, nequ)], nnzj = nequ, nnzh = 0)
 
-  nlp = FeasibilityFormNLS{FeasibilityResidual}(meta, nls_meta, nls, NLSCounters())
+  nlp = FeasibilityFormNLS{T, S, FeasibilityResidual{T, S}}(meta, nls_meta, nls, NLSCounters())
   finalizer(nlp -> finalize(nlp.internal), nlp)
 
   return nlp

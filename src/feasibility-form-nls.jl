@@ -22,9 +22,9 @@ to
 If you rather have the first problem, the `nls` model already works as an NLPModel of
 that format.
 """
-mutable struct FeasibilityFormNLS{M <: AbstractNLSModel} <: AbstractNLSModel
-  meta::NLPModelMeta
-  nls_meta::NLSMeta
+mutable struct FeasibilityFormNLS{T, S, M <: AbstractNLSModel{T, S}} <: AbstractNLSModel{T, S}
+  meta::NLPModelMeta{T, S}
+  nls_meta::NLSMeta{T, S}
   internal::M
   counters::NLSCounters
 end
@@ -39,38 +39,41 @@ end
 Converts a nonlinear least-squares problem with residual `F(x)` to a nonlinear
 optimization problem with constraints `F(x) = r` and objective `¹/₂‖r‖²`.
 """
-function FeasibilityFormNLS(nls::AbstractNLSModel; name = "$(nls.meta.name)-ffnls")
+function FeasibilityFormNLS(
+  nls::AbstractNLSModel{T, S};
+  name = "$(nls.meta.name)-ffnls",
+) where {T,S}
   nequ = nls.nls_meta.nequ
   meta = nls.meta
   nvar = meta.nvar + nequ
   ncon = meta.ncon + nequ
   nnzh = nls.nls_meta.nnzh + nequ + (meta.ncon == 0 ? 0 : meta.nnzh) # Some indexes can be repeated
-  meta = NLPModelMeta(
+  meta = NLPModelMeta{T, S}(
     nvar,
-    x0 = [meta.x0; zeros(nequ)],
-    lvar = [meta.lvar; fill(-Inf, nequ)],
-    uvar = [meta.uvar; fill(Inf, nequ)],
+    x0 = [meta.x0; zeros(T, nequ)],
+    lvar = [meta.lvar; fill(T(-Inf), nequ)],
+    uvar = [meta.uvar; fill(T(Inf), nequ)],
     ncon = ncon,
-    lcon = [zeros(nequ); meta.lcon],
-    ucon = [zeros(nequ); meta.ucon],
-    y0 = [zeros(nequ); meta.y0],
+    lcon = [zeros(T, nequ); meta.lcon],
+    ucon = [zeros(T, nequ); meta.ucon],
+    y0 = [zeros(T, nequ); meta.y0],
     lin = [nls.nls_meta.lin; meta.lin .+ nequ],
     nln = [nls.nls_meta.nln; meta.nln .+ nequ],
     nnzj = meta.nnzj + nls.nls_meta.nnzj + nequ,
     nnzh = nnzh,
     name = name,
   )
-  nls_meta = NLSMeta(
+  nls_meta = NLSMeta{T, S}(
     nequ,
     nvar,
-    x0 = [meta.x0; zeros(nequ)],
+    x0 = [meta.x0; zeros(T, nequ)],
     nnzj = nequ,
     nnzh = 0,
     lin = 1:nequ,
     nln = Int[],
   )
 
-  nlp = FeasibilityFormNLS{typeof(nls)}(meta, nls_meta, nls, NLSCounters())
+  nlp = FeasibilityFormNLS{T, S, typeof(nls)}(meta, nls_meta, nls, NLSCounters())
   finalizer(nlp -> finalize(nlp.internal), nlp)
 
   return nlp

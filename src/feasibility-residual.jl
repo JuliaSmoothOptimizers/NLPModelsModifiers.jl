@@ -25,11 +25,11 @@ The slack variables are created using SlackModel.
 If ``\\ell_i = u_i``, no slack variable is created.
 In particular, if there are only equality constrained of the form ``c(x) = 0``, the resulting NLS is simply ``\\min_x \\tfrac{1}{2}\\|c(x)\\|^2``.
 """
-mutable struct FeasibilityResidual <: AbstractNLSModel
-  meta::NLPModelMeta
-  nls_meta::NLSMeta
+mutable struct FeasibilityResidual{T, S} <: AbstractNLSModel{T, S}
+  meta::NLPModelMeta{T, S}
+  nls_meta::NLSMeta{T, S}
   counters::NLSCounters
-  nlp::AbstractNLPModel
+  nlp::AbstractNLPModel{T, S}
 end
 
 function NLPModels.show_header(io::IO, nls::FeasibilityResidual)
@@ -39,7 +39,10 @@ function NLPModels.show_header(io::IO, nls::FeasibilityResidual)
   )
 end
 
-function FeasibilityResidual(nlp::AbstractNLPModel; name = "$(nlp.meta.name)-feasres")
+function FeasibilityResidual(
+  nlp::AbstractNLPModel{T, S};
+  name = "$(nlp.meta.name)-feasres",
+) where {T, S}
   if !equality_constrained(nlp)
     if unconstrained(nlp)
       throw(ErrorException("Can't handle unconstrained problem"))
@@ -52,7 +55,7 @@ function FeasibilityResidual(nlp::AbstractNLPModel; name = "$(nlp.meta.name)-fea
 
   m, n = nlp.meta.ncon, nlp.meta.nvar
   # TODO: What is copied?
-  meta = NLPModelMeta(
+  meta = NLPModelMeta{T, S}(
     n,
     x0 = nlp.meta.x0,
     name = name,
@@ -60,7 +63,7 @@ function FeasibilityResidual(nlp::AbstractNLPModel; name = "$(nlp.meta.name)-fea
     uvar = nlp.meta.uvar,
     nnzj = 0,
   )
-  nls_meta = NLSMeta(
+  nls_meta = NLSMeta{T, S}(
     m,
     n,
     nnzj = nlp.meta.nnzj,

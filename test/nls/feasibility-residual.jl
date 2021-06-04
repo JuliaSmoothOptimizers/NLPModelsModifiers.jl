@@ -95,7 +95,7 @@
 
   @testset "Show" begin
     nls = FeasibilityResidual(SimpleNLSModel())
-    @test typeof(nls.nlp) == SlackNLSModel
+    @test typeof(nls.nlp) == SlackNLSModel{Float64, Vector{Float64}}
     io = IOBuffer()
     show(io, nls)
     showed = String(take!(io))
@@ -125,8 +125,8 @@
   end
 
   @testset "FeasibilityResidual of an unconstrained problem" begin
-    mutable struct UncModel <: AbstractNLPModel
-      meta::NLPModelMeta
+    mutable struct UncModel{T, S} <: AbstractNLPModel{T, S}
+      meta::NLPModelMeta{T, S}
     end
     nlp = UncModel(NLPModelMeta(2))
     @test_throws ErrorException FeasibilityResidual(nlp)
