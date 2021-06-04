@@ -24,22 +24,23 @@ mutable struct SimpleNLSModel{T, S} <: AbstractNLSModel{T, S}
   counters::NLSCounters
 end
 
-function SimpleNLSModel()
-  meta = NLPModelMeta(
+function SimpleNLSModel(::T) where {T}
+  meta = NLPModelMeta{T, Vector{T}}(
     2,
-    x0 = ones(2),
+    x0 = ones(T, 2),
     name = "Simple NLS Model",
-    lvar = zeros(2),
-    uvar = ones(2),
+    lvar = zeros(T, 2),
+    uvar = ones(T, 2),
     ncon = 3,
-    lcon = [0.0; 0.0; 1.0],
-    ucon = [Inf; Inf; 1.0],
+    lcon = T.([0.0; 0.0; 1.0]),
+    ucon = T.([Inf; Inf; 1.0]),
     nnzj = 6,
   )
-  nls_meta = NLSMeta(2, 2, nnzj = 3, nnzh = 1)
+  nls_meta = NLSMeta{T, Vector{T}}(2, 2, nnzj = 3, nnzh = 1)
 
   return SimpleNLSModel(meta, nls_meta, NLSCounters())
 end
+SimpleNLSModel() = SimpleNLSModel(zero(Float64))
 
 function NLPModels.residual!(nls::SimpleNLSModel, x::AbstractVector, Fx::AbstractVector)
   @lencheck 2 x Fx

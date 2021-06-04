@@ -16,21 +16,22 @@ mutable struct SimpleNLPModel{T, S} <: AbstractNLPModel{T, S}
   counters::Counters
 end
 
-function SimpleNLPModel()
-  meta = NLPModelMeta(
+function SimpleNLPModel(::T) where {T}
+  meta = NLPModelMeta{T, Vector{T}}(
     2,
     nnzh = 2,
     ncon = 2,
-    lvar = zeros(2),
-    uvar = ones(2),
-    x0 = [2.0; 2.0],
-    lcon = [0.0; 0.0],
-    ucon = [0.0; Inf],
+    lvar = zeros(T, 2),
+    uvar = ones(T, 2),
+    x0 = T.([2.0; 2.0]),
+    lcon = T.([0.0; 0.0]),
+    ucon = T.([0.0; Inf]),
     name = "Simple NLP Model",
   )
 
   return SimpleNLPModel(meta, Counters())
 end
+SimpleNLPModel() = SimpleNLPModel(zero(Float64))
 
 function NLPModels.obj(nlp::SimpleNLPModel, x::AbstractVector)
   @lencheck 2 x
