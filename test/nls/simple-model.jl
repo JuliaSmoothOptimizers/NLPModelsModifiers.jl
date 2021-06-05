@@ -24,7 +24,7 @@ mutable struct SimpleNLSModel{T, S} <: AbstractNLSModel{T, S}
   counters::NLSCounters
 end
 
-function SimpleNLSModel(::T) where {T}
+function SimpleNLSModel(::Type{T}) where {T}
   meta = NLPModelMeta{T, Vector{T}}(
     2,
     x0 = ones(T, 2),
@@ -32,15 +32,15 @@ function SimpleNLSModel(::T) where {T}
     lvar = zeros(T, 2),
     uvar = ones(T, 2),
     ncon = 3,
-    lcon = T.([0.0; 0.0; 1.0]),
-    ucon = T.([Inf; Inf; 1.0]),
+    lcon = T[0; 0; 1],
+    ucon = T[Inf; Inf; 1],
     nnzj = 6,
   )
   nls_meta = NLSMeta{T, Vector{T}}(2, 2, nnzj = 3, nnzh = 1)
 
   return SimpleNLSModel(meta, nls_meta, NLSCounters())
 end
-SimpleNLSModel() = SimpleNLSModel(zero(Float64))
+SimpleNLSModel() = SimpleNLSModel(Float64)
 
 function NLPModels.residual!(nls::SimpleNLSModel, x::AbstractVector, Fx::AbstractVector)
   @lencheck 2 x Fx

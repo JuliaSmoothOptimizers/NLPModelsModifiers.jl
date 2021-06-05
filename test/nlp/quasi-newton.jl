@@ -5,72 +5,71 @@
     c(x) = [x[1] - 2x[2] + 1; -x[1]^2 / 4 - x[2]^2 + 1]
     J(x) = [1.0 -2.0; -0.5x[1] -2.0x[2]]
 
-    for (QNM, QNO) in [(LSR1Model, LSR1Operator), (LBFGSModel, LBFGSOperator)]
-      for dt in [Float64, Float32]
-        nlp = QNM(SimpleNLPModel(zero(dt)))
-        n = nlp.meta.nvar
-        m = nlp.meta.ncon
+    for (QNM, QNO) in [(LSR1Model, LSR1Operator), (LBFGSModel, LBFGSOperator)], 
+    T in [Float64, Float32]
+      nlp = QNM(SimpleNLPModel(T))
+      n = nlp.meta.nvar
+      m = nlp.meta.ncon
 
-        s, y = randn(n), randn(n)
-        B = QNO(n)
-        push!(B, s, y)
-        push!(nlp, s, y)
-        H(x) = B
-        H(x, y) = B
+      s, y = randn(n), randn(n)
+      B = QNO(n)
+      push!(B, s, y)
+      push!(nlp, s, y)
+      H(x) = B
+      H(x, y) = B
 
-        y = randn(m)
-        x = randn(n)
-        v = randn(n)
-        w = randn(m)
-        Jv = zeros(m)
-        Jtw = zeros(n)
-        Hv = zeros(n)
-        Hvals = zeros(nlp.meta.nnzh)
+      y = randn(m)
+      x = randn(n)
+      v = randn(n)
+      w = randn(m)
+      Jv = zeros(m)
+      Jtw = zeros(n)
+      Hv = zeros(n)
+      Hvals = zeros(nlp.meta.nnzh)
 
-        # Basic methods
-        @test obj(nlp, x) ≈ f(x)
-        @test grad(nlp, x) ≈ ∇f(x)
-        @test hprod(nlp, x, v) ≈ H(x) * v
-        @test cons(nlp, x) ≈ c(x)
-        @test jac(nlp, x) ≈ J(x)
-        @test jprod(nlp, x, v) ≈ J(x) * v
-        @test jtprod(nlp, x, w) ≈ J(x)' * w
+      # Basic methods
+      @test obj(nlp, x) ≈ f(x)
+      @test grad(nlp, x) ≈ ∇f(x)
+      @test hprod(nlp, x, v) ≈ H(x) * v
+      @test cons(nlp, x) ≈ c(x)
+      @test jac(nlp, x) ≈ J(x)
+      @test jprod(nlp, x, v) ≈ J(x) * v
+      @test jtprod(nlp, x, w) ≈ J(x)' * w
 
-        # Increasing coverage
-        fx, cx = objcons(nlp, x)
-        @test fx ≈ f(x)
-        @test cx ≈ c(x)
-        fx, _ = objcons!(nlp, x, cx)
-        @test fx ≈ f(x)
-        @test cx ≈ c(x)
-        fx, gx = objgrad(nlp, x)
-        @test fx ≈ f(x)
-        @test gx ≈ ∇f(x)
-        fx, _ = objgrad!(nlp, x, gx)
-        @test fx ≈ f(x)
-        @test gx ≈ ∇f(x)
-        @test jprod!(nlp, jac_structure(nlp)..., jac_coord(nlp, x), v, Jv) ≈ J(x) * v
-        @test jprod!(nlp, x, jac_structure(nlp)..., v, Jv) ≈ J(x) * v
-        @test jtprod!(nlp, jac_structure(nlp)..., jac_coord(nlp, x), w, Jtw) ≈ J(x)' * w
-        @test jtprod!(nlp, x, jac_structure(nlp)..., w, Jtw) ≈ J(x)' * w
-        Jop = jac_op!(nlp, x, Jv, Jtw)
-        @test Jop * v ≈ J(x) * v
-        @test Jop' * w ≈ J(x)' * w
-        Jop = jac_op!(nlp, jac_structure(nlp)..., jac_coord(nlp, x), Jv, Jtw)
-        @test Jop * v ≈ J(x) * v
-        @test Jop' * w ≈ J(x)' * w
-        Jop = jac_op!(nlp, x, jac_structure(nlp)..., Jv, Jtw)
-        @test Jop * v ≈ J(x) * v
-        @test Jop' * w ≈ J(x)' * w
-        Hop = hess_op(nlp, x)
-        @test Hop * v ≈ H(x) * v
-        Hop = hess_op!(nlp, x, Hv)
-        @test Hop * v ≈ H(x) * v
+      # Increasing coverage
+      fx, cx = objcons(nlp, x)
+      @test fx ≈ f(x)
+      @test cx ≈ c(x)
+      fx, _ = objcons!(nlp, x, cx)
+      @test fx ≈ f(x)
+      @test cx ≈ c(x)
+      fx, gx = objgrad(nlp, x)
+      @test fx ≈ f(x)
+      @test gx ≈ ∇f(x)
+      fx, _ = objgrad!(nlp, x, gx)
+      @test fx ≈ f(x)
+      @test gx ≈ ∇f(x)
+      @test jprod!(nlp, jac_structure(nlp)..., jac_coord(nlp, x), v, Jv) ≈ J(x) * v
+      @test jprod!(nlp, x, jac_structure(nlp)..., v, Jv) ≈ J(x) * v
+      @test jtprod!(nlp, jac_structure(nlp)..., jac_coord(nlp, x), w, Jtw) ≈ J(x)' * w
+      @test jtprod!(nlp, x, jac_structure(nlp)..., w, Jtw) ≈ J(x)' * w
+      Jop = jac_op!(nlp, x, Jv, Jtw)
+      @test Jop * v ≈ J(x) * v
+      @test Jop' * w ≈ J(x)' * w
+      Jop = jac_op!(nlp, jac_structure(nlp)..., jac_coord(nlp, x), Jv, Jtw)
+      @test Jop * v ≈ J(x) * v
+      @test Jop' * w ≈ J(x)' * w
+      Jop = jac_op!(nlp, x, jac_structure(nlp)..., Jv, Jtw)
+      @test Jop * v ≈ J(x) * v
+      @test Jop' * w ≈ J(x)' * w
+      Hop = hess_op(nlp, x)
+      @test Hop * v ≈ H(x) * v
+      Hop = hess_op!(nlp, x, Hv)
+      @test Hop * v ≈ H(x) * v
 
-        reset_data!(nlp)
-        Hop = hess_op!(nlp, x, Hv)
-        @test Hop * v == v
-      end
+      reset_data!(nlp)
+      Hop = hess_op!(nlp, x, Hv)
+      @test Hop * v == v
     end
   end
 
@@ -79,7 +78,8 @@
     io = IOBuffer()
     show(io, nlp)
     showed = String(take!(io))
-    expected = """LSR1Model{Float64, Vector{Float64}} - A QuasiNewtonModel
+    storage_type = typeof(nlp)
+    expected = """$storage_type - A QuasiNewtonModel
     Problem name: Simple NLP Model
      All variables: ████████████████████ 2      All constraints: ████████████████████ 2
               free: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0                 free: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0
@@ -104,7 +104,8 @@
     io = IOBuffer()
     show(io, nlp)
     showed = String(take!(io))
-    expected = """LBFGSModel{Float64, Vector{Float64}} - A QuasiNewtonModel
+    storage_type = typeof(nlp)
+    expected = """$storage_type - A QuasiNewtonModel
     Problem name: Simple NLP Model
      All variables: ████████████████████ 2      All constraints: ████████████████████ 2
               free: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0                 free: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0
