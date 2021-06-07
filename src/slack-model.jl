@@ -84,14 +84,19 @@ function slack_meta(meta::NLPModelMeta{T, S}; name = meta.name * "-slack") where
   # Don't introduce slacks for equality constraints!
   lvar = [meta.lvar; meta.lcon[[jlow; jupp; jrng]]]  # l ≤ x  and  cₗ ≤ s
   uvar = [meta.uvar; meta.ucon[[jlow; jupp; jrng]]]  # x ≤ u  and  s ≤ cᵤ
-  lcon = zeros(T, meta.ncon)
+  lcon = similar(meta.x0, meta.ncon)
+  lcon[setdiff(1:meta.ncon, meta.jfix)] .= zero(T)
   lcon[meta.jfix] = meta.lcon[meta.jfix]
-  ucon = zeros(T, meta.ncon)
+  ucon = similar(meta.x0, meta.ncon)
+  ucon[setdiff(1:meta.ncon, meta.jfix)] .= zero(T)
   ucon[meta.jfix] = meta.ucon[meta.jfix]
 
+  x0 = similar(meta.x0, meta.nvar + ns)
+  x0[1 : meta.nvar] .= meta.x0
+  x0[meta.nvar : end] .= zero(T)
   return NLPModelMeta(
     meta.nvar + ns,
-    x0 = [meta.x0; zeros(T, ns)],
+    x0 = x0,
     lvar = lvar,
     uvar = uvar,
     ncon = meta.ncon,
@@ -126,10 +131,13 @@ function SlackNLSModel(
   ns == 0 && return model
 
   meta = slack_meta(model.meta, name = name)
+  x0 = similar(model.meta.x0, model.meta.nvar + ns)
+  x0[model.meta.nvar : end] .= zero(T)
+  x0[1 : model.meta.nvar] .= model.meta.x0
   nls_meta = NLSMeta{T, S}(
     model.nls_meta.nequ,
     model.meta.nvar + ns,
-    x0 = [model.meta.x0; zeros(eltype(model.meta.x0), ns)],
+    x0 = x0,
     nnzj = model.nls_meta.nnzj,
     nnzh = model.nls_meta.nnzh,
     lin = model.nls_meta.lin,

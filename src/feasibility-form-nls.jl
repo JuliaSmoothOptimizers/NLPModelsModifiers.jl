@@ -48,15 +48,33 @@ function FeasibilityFormNLS(
   nvar = meta.nvar + nequ
   ncon = meta.ncon + nequ
   nnzh = nls.nls_meta.nnzh + nequ + (meta.ncon == 0 ? 0 : meta.nnzh) # Some indexes can be repeated
+  x0 = similar(meta.x0, nvar)
+  x0[1 : meta.nvar] .= meta.x0
+  x0[meta.nvar + 1 : end] .= zero(T)
+  lvar = similar(meta.x0, nvar)
+  lvar[1 : meta.nvar] .= meta.lvar
+  lvar[meta.nvar + 1 : end] .= T(-Inf)
+  uvar = similar(meta.x0, nvar)
+  uvar[1 : meta.nvar] .= meta.uvar
+  uvar[meta.nvar + 1 : end] .= T(Inf)
+  lcon = similar(meta.y0, ncon)
+  lcon[1 : nequ] .= zero(T)
+  lcon[nequ + 1 : end] .= meta.lcon
+  ucon = similar(meta.y0, ncon)
+  ucon[1 : nequ] .= zero(T)
+  ucon[nequ + 1 : end] .= meta.ucon
+  y0 = similar(meta.y0, ncon)
+  y0[1 : nequ] .= zero(T)
+  y0[nequ + 1 : end] .= meta.y0
   meta = NLPModelMeta{T, S}(
     nvar,
-    x0 = [meta.x0; zeros(T, nequ)],
-    lvar = [meta.lvar; fill(T(-Inf), nequ)],
-    uvar = [meta.uvar; fill(T(Inf), nequ)],
+    x0 = x0,
+    lvar = lvar,
+    uvar = uvar,
     ncon = ncon,
-    lcon = [zeros(T, nequ); meta.lcon],
-    ucon = [zeros(T, nequ); meta.ucon],
-    y0 = [zeros(T, nequ); meta.y0],
+    lcon = lcon,
+    ucon = ucon,
+    y0 = y0,
     lin = [nls.nls_meta.lin; meta.lin .+ nequ],
     nln = [nls.nls_meta.nln; meta.nln .+ nequ],
     nnzj = meta.nnzj + nls.nls_meta.nnzj + nequ,
@@ -66,7 +84,7 @@ function FeasibilityFormNLS(
   nls_meta = NLSMeta{T, S}(
     nequ,
     nvar,
-    x0 = [meta.x0; zeros(T, nequ)],
+    x0 = x0,
     nnzj = nequ,
     nnzh = 0,
     lin = 1:nequ,
