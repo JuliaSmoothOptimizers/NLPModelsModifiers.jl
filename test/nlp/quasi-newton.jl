@@ -5,8 +5,9 @@
     c(x) = [x[1] - 2x[2] + 1; -x[1]^2 / 4 - x[2]^2 + 1]
     J(x) = [1.0 -2.0; -0.5x[1] -2.0x[2]]
 
-    for (QNM, QNO) in [(LSR1Model, LSR1Operator), (LBFGSModel, LBFGSOperator)], 
-    T in [Float64, Float32]
+    for (QNM, QNO) in [(LSR1Model, LSR1Operator), (LBFGSModel, LBFGSOperator)],
+      T in [Float64, Float32]
+
       nlp = QNM(SimpleNLPModel(T))
       n = nlp.meta.nvar
       m = nlp.meta.ncon

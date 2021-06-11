@@ -85,15 +85,15 @@ function slack_meta(meta::NLPModelMeta{T, S}; name = meta.name * "-slack") where
   lvar = [meta.lvar; meta.lcon[[jlow; jupp; jrng]]]  # l ≤ x  and  cₗ ≤ s
   uvar = [meta.uvar; meta.ucon[[jlow; jupp; jrng]]]  # x ≤ u  and  s ≤ cᵤ
   lcon = similar(meta.x0, meta.ncon)
-  lcon[setdiff(1:meta.ncon, meta.jfix)] .= zero(T)
+  lcon[setdiff(1:(meta.ncon), meta.jfix)] .= zero(T)
   lcon[meta.jfix] = meta.lcon[meta.jfix]
   ucon = similar(meta.x0, meta.ncon)
-  ucon[setdiff(1:meta.ncon, meta.jfix)] .= zero(T)
+  ucon[setdiff(1:(meta.ncon), meta.jfix)] .= zero(T)
   ucon[meta.jfix] = meta.ucon[meta.jfix]
 
   x0 = similar(meta.x0, meta.nvar + ns)
-  x0[1 : meta.nvar] .= meta.x0
-  x0[meta.nvar : end] .= zero(T)
+  x0[1:(meta.nvar)] .= meta.x0
+  x0[(meta.nvar):end] .= zero(T)
   return NLPModelMeta(
     meta.nvar + ns,
     x0 = x0,
@@ -132,8 +132,8 @@ function SlackNLSModel(
 
   meta = slack_meta(model.meta, name = name)
   x0 = similar(model.meta.x0, model.meta.nvar + ns)
-  x0[model.meta.nvar : end] .= zero(T)
-  x0[1 : model.meta.nvar] .= model.meta.x0
+  x0[(model.meta.nvar):end] .= zero(T)
+  x0[1:(model.meta.nvar)] .= model.meta.x0
   nls_meta = NLSMeta{T, S}(
     model.nls_meta.nequ,
     model.meta.nvar + ns,

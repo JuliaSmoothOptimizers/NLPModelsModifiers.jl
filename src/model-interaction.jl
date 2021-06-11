@@ -9,14 +9,14 @@ function FeasibilityFormNLS(
   nnzj = meta.nnzj + nequ
   nnzh = meta.nnzh + nequ
   x0 = similar(meta.x0, nvar)
-  x0[1 : meta.nvar] .= meta.x0
-  x0[meta.nvar : end] .= zero(T)
+  x0[1:(meta.nvar)] .= meta.x0
+  x0[(meta.nvar):end] .= zero(T)
   lvar = similar(meta.x0, nvar)
-  lvar[1 : meta.nvar] .= meta.lvar
-  lvar[meta.nvar + 1 : end] .= T(-Inf)
+  lvar[1:(meta.nvar)] .= meta.lvar
+  lvar[(meta.nvar + 1):end] .= T(-Inf)
   uvar = similar(meta.x0, nvar)
-  uvar[1 : meta.nvar] .= meta.uvar
-  uvar[meta.nvar + 1 : end] .= T(Inf)
+  uvar[1:(meta.nvar)] .= meta.uvar
+  uvar[(meta.nvar + 1):end] .= T(Inf)
   meta = NLPModelMeta{T, S}(
     nvar,
     x0 = x0,

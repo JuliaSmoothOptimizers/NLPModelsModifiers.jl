@@ -4,7 +4,6 @@
     JF(x) = [-1.0 0 0 0; -20*x[1] 10 0 0]
     HF(x, w) = w[2] * diagm(0 => [-20.0; zeros(3)])
 
-    
     nls = SlackNLSModel(SimpleNLSModel(T))
     n = nls.meta.nvar
     m = nls.meta.ncon
