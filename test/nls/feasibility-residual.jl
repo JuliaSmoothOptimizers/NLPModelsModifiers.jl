@@ -4,7 +4,6 @@
     JF(x) = [1.0 -2.0 0; -0.5x[1] -2.0x[2] -1]
     HF(x, w) = w[2] * diagm(0 => [-0.5; -2.0; 0.0])
 
-    
     nls = FeasibilityResidual(SimpleNLPModel(T))
     n = nls.meta.nvar
     ne = nls_meta(nls).nequ
@@ -69,7 +68,6 @@
     ∇f(x) = JF(x)' * F(x)
     H(x) = JF(x)' * JF(x) + HF(x, F(x))
 
-    
     nls = FeasibilityResidual(SimpleNLPModel(T))
     n = nls.meta.nvar
 

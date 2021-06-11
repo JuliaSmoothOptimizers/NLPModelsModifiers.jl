@@ -7,7 +7,6 @@
     J(x) = [1.0 -2.0 0; -0.5x[1] -2.0x[2] -1]
     H(x, y) = H(x) + y[2] * [-0.5 0 0; 0 -2.0 0; 0 0 0]
 
-    
     nlp = SlackModel(SimpleNLPModel(T))
     n = nlp.meta.nvar
     m = nlp.meta.ncon

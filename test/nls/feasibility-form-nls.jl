@@ -4,7 +4,6 @@
     JF(x) = Float64[0 0 1 0; 0 0 0 1]
     HF(x, w) = zeros(4, 4)
 
-    
     nls = FeasibilityFormNLS(SimpleNLSModel(T))
     n = nls.meta.nvar
     m = nls.meta.ncon
@@ -23,7 +22,7 @@
     @test jprod_residual(nls, x, v) ≈ JF(x) * v
     @test jtprod_residual(nls, x, w) ≈ JF(x)' * w
     @test jprod_residual!(nls, jac_structure_residual(nls)..., jac_coord_residual(nls, x), v, Jv) ≈
-        JF(x) * v
+          JF(x) * v
     @test jtprod_residual!(
       nls,
       jac_structure_residual(nls)...,
@@ -76,7 +75,6 @@
     J(x) = [-1 0 -1 0; -20x[1] 10 0 -1; 1 2x[2] 0 0; 2x[1] 1 0 0; 2x[1] 2x[2] 0 0]
     H(x, y) = H(x) + diagm(0 => [-20y[2] + 2y[4] + 2y[5]; 2y[3] + 2y[5]; 0; 0])
 
-    
     nls = FeasibilityFormNLS(SimpleNLSModel(T))
     n = nls.meta.nvar
     m = nls.meta.ncon

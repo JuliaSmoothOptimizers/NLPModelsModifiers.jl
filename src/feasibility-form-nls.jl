@@ -42,30 +42,30 @@ optimization problem with constraints `F(x) = r` and objective `¹/₂‖r‖²`
 function FeasibilityFormNLS(
   nls::AbstractNLSModel{T, S};
   name = "$(nls.meta.name)-ffnls",
-) where {T,S}
+) where {T, S}
   nequ = nls.nls_meta.nequ
   meta = nls.meta
   nvar = meta.nvar + nequ
   ncon = meta.ncon + nequ
   nnzh = nls.nls_meta.nnzh + nequ + (meta.ncon == 0 ? 0 : meta.nnzh) # Some indexes can be repeated
   x0 = similar(meta.x0, nvar)
-  x0[1 : meta.nvar] .= meta.x0
-  x0[meta.nvar + 1 : end] .= zero(T)
+  x0[1:(meta.nvar)] .= meta.x0
+  x0[(meta.nvar + 1):end] .= zero(T)
   lvar = similar(meta.x0, nvar)
-  lvar[1 : meta.nvar] .= meta.lvar
-  lvar[meta.nvar + 1 : end] .= T(-Inf)
+  lvar[1:(meta.nvar)] .= meta.lvar
+  lvar[(meta.nvar + 1):end] .= T(-Inf)
   uvar = similar(meta.x0, nvar)
-  uvar[1 : meta.nvar] .= meta.uvar
-  uvar[meta.nvar + 1 : end] .= T(Inf)
+  uvar[1:(meta.nvar)] .= meta.uvar
+  uvar[(meta.nvar + 1):end] .= T(Inf)
   lcon = similar(meta.y0, ncon)
-  lcon[1 : nequ] .= zero(T)
-  lcon[nequ + 1 : end] .= meta.lcon
+  lcon[1:nequ] .= zero(T)
+  lcon[(nequ + 1):end] .= meta.lcon
   ucon = similar(meta.y0, ncon)
-  ucon[1 : nequ] .= zero(T)
-  ucon[nequ + 1 : end] .= meta.ucon
+  ucon[1:nequ] .= zero(T)
+  ucon[(nequ + 1):end] .= meta.ucon
   y0 = similar(meta.y0, ncon)
-  y0[1 : nequ] .= zero(T)
-  y0[nequ + 1 : end] .= meta.y0
+  y0[1:nequ] .= zero(T)
+  y0[(nequ + 1):end] .= meta.y0
   meta = NLPModelMeta{T, S}(
     nvar,
     x0 = x0,
@@ -81,15 +81,7 @@ function FeasibilityFormNLS(
     nnzh = nnzh,
     name = name,
   )
-  nls_meta = NLSMeta{T, S}(
-    nequ,
-    nvar,
-    x0 = x0,
-    nnzj = nequ,
-    nnzh = 0,
-    lin = 1:nequ,
-    nln = Int[],
-  )
+  nls_meta = NLSMeta{T, S}(nequ, nvar, x0 = x0, nnzj = nequ, nnzh = 0, lin = 1:nequ, nln = Int[])
 
   nlp = FeasibilityFormNLS{T, S, typeof(nls)}(meta, nls_meta, nls, NLSCounters())
   finalizer(nlp -> finalize(nlp.internal), nlp)
