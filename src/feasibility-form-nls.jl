@@ -255,29 +255,6 @@ function NLPModels.hess_coord!(
   return vals
 end
 
-function NLPModels.hess(nlp::FeasibilityFormNLS, xr::AbstractVector; obj_weight::Float64 = 1.0)
-  @lencheck nlp.meta.nvar xr
-  increment!(nlp, :neval_hess)
-  n, ne = nlp.internal.meta.nvar, nlp.internal.nls_meta.nequ
-  return [spzeros(n, n + ne); spzeros(ne, n) obj_weight*I]
-end
-
-function NLPModels.hess(
-  nlp::FeasibilityFormNLS,
-  xr::AbstractVector,
-  y::AbstractVector;
-  obj_weight::Float64 = 1.0,
-)
-  @lencheck nlp.meta.nvar xr
-  @lencheck nlp.meta.ncon y
-  increment!(nlp, :neval_hess)
-  n, m, ne = nlp.internal.meta.nvar, nlp.internal.meta.ncon, nlp.internal.nls_meta.nequ
-  x = @view xr[1:n]
-  @views Hx = m > 0 ? hess(nlp.internal, x, y[(ne + 1):end], obj_weight = 0.0) : spzeros(n, n)
-  Hx += hess_residual(nlp.internal, x, @view y[1:ne])
-  return [Hx spzeros(n, ne); spzeros(ne, n) obj_weight*I]
-end
-
 function NLPModels.hprod!(
   nlp::FeasibilityFormNLS,
   xr::AbstractVector,

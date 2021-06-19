@@ -326,8 +326,8 @@ function NLPModels.hess(nlp::SlackModels, x::AbstractVector{T}; kwargs...) where
   @lencheck nlp.meta.nvar x
   n = nlp.model.meta.nvar
   ns = nlp.meta.nvar - n
-  Hx = hess(nlp.model, view(x, 1:n); kwargs...)
-  return [Hx spzeros(T, n, ns); spzeros(T, ns, n + ns)]
+  Hx = hess(nlp.model, view(x, 1:n); kwargs...).data
+  return Symmetric([Hx spzeros(T, n, ns); spzeros(T, ns, n + ns)], :L)
 end
 
 function NLPModels.hess(
@@ -340,8 +340,8 @@ function NLPModels.hess(
   @lencheck nlp.meta.ncon y
   n = nlp.model.meta.nvar
   ns = nlp.meta.nvar - n
-  Hx = hess(nlp.model, view(x, 1:n), y; kwargs...)
-  return [Hx spzeros(T, n, ns); spzeros(T, ns, n + ns)]
+  Hx = hess(nlp.model, view(x, 1:n), y; kwargs...).data
+  return Symmetric([Hx spzeros(T, n, ns); spzeros(T, ns, n + ns)], :L)
 end
 
 function NLPModels.hprod!(

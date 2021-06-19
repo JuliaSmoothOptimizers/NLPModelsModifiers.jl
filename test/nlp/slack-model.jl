@@ -23,13 +23,13 @@
     # Basic methods
     @test obj(nlp, x) ≈ f(x)
     @test grad(nlp, x) ≈ ∇f(x)
-    @test hess(nlp, x) ≈ tril(H(x))
+    @test hess(nlp, x) ≈ H(x)
     @test hprod(nlp, x, v) ≈ H(x) * v
     @test cons(nlp, x) ≈ c(x)
     @test jac(nlp, x) ≈ J(x)
     @test jprod(nlp, x, v) ≈ J(x) * v
     @test jtprod(nlp, x, w) ≈ J(x)' * w
-    @test hess(nlp, x, y) ≈ tril(H(x, y))
+    @test hess(nlp, x, y) ≈ H(x, y)
     @test hprod(nlp, x, y, v) ≈ H(x, y) * v
 
     # Increasing coverage
