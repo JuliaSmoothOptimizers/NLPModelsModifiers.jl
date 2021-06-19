@@ -178,8 +178,8 @@ function NLPModels.hess(
   cx = cons(nls.nlp, x)
   Jx = jac(nls.nlp, x)
   Hx = tril(Jx' * Jx)
-  Hx .+= hess(nls.nlp, x, cx, obj_weight = 0.0)
-  return obj_weight * Hx
+  Hx .+= hess(nls.nlp, x, cx, obj_weight = 0.0).data
+  return Symmetric(obj_weight * Hx, :L)
 end
 
 function NLPModels.hprod!(
