@@ -202,10 +202,13 @@ function NLPModels.hess(
   @lencheck 2 x
   @lencheck 3 y
   increment!(nls, :neval_hess)
-  return Symmetric([
-    obj_weight*(T(1) - 200 * x[2] + 600 * x[1]^2)+2*y[2]+2*y[3] T(0)
-    -obj_weight*200*x[1] obj_weight*T(100)+2*y[1]+2*y[3]
-  ], :L)
+  return Symmetric(
+    [
+      obj_weight*(T(1) - 200 * x[2] + 600 * x[1]^2)+2*y[2]+2*y[3] T(0)
+      -obj_weight*200*x[1] obj_weight*T(100)+2*y[1]+2*y[3]
+    ],
+    :L,
+  )
 end
 
 function NLPModels.hess_structure!(
