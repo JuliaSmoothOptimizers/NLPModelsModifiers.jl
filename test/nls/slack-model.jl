@@ -138,9 +138,9 @@
     Jop = jac_op!(nls, x, jac_structure(nls)..., Jv, Jtw)
     @test Jop * v ≈ J(x) * v
     @test Jop' * w ≈ J(x)' * w
-    ghjv = zeros(m)
+    ghjv = zeros(T, m)
     for j = 1:m
-      eⱼ = [i == j ? 1.0 : 0.0 for i = 1:m]
+      eⱼ = [i == j ? one(T) : zero(T) for i = 1:m]
       Cⱼ(x) = H(x, eⱼ) - H(x)
       ghjv[j] = dot(gx, Cⱼ(x) * v)
     end

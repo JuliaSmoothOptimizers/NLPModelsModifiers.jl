@@ -356,7 +356,7 @@ function NLPModels.jtprod_residual!(
   @lencheck nlp.nls_meta.nequ v
   increment!(nlp, :neval_jtprod_residual)
   n, ne = nlp.internal.meta.nvar, nlp.internal.nls_meta.nequ
-  Jtv[1:n] .= 0.0
+  Jtv[1:n] .= zero(eltype(x))
   Jtv[(n + 1):end] .= v
   return Jtv
 end
@@ -387,7 +387,7 @@ function NLPModels.jth_hess_residual(nlp::FeasibilityFormNLS, x::AbstractVector,
   @lencheck nlp.meta.nvar x
   increment!(nlp, :neval_jhess_residual)
   n = nlp.meta.nvar
-  return spzeros(n, n)
+  return spzeros(eltype(x), n, n)
 end
 
 function NLPModels.hprod_residual!(
@@ -399,6 +399,6 @@ function NLPModels.hprod_residual!(
 )
   @lencheck nlp.meta.nvar x v Hiv
   increment!(nlp, :neval_hprod_residual)
-  fill!(Hiv, 0.0)
+  fill!(Hiv, zero(eltype(x)))
   return Hiv
 end
