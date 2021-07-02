@@ -157,6 +157,7 @@
     Hop = hess_op!(nls, x, Hv)
     @test Hop * v ≈ H(x) * v
     Hop = hess_op!(nls, hess_structure(nls)..., hess_coord(nls, x), Hv)
+    z .= 1
     @test Hop * v ≈ H(x) * v
     res = H(x) * v - z
     @test mul!(z, Hop, v, one(T), -one(T)) ≈ res
