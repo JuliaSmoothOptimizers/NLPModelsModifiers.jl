@@ -56,7 +56,7 @@
     @test hess_structure_residual(nls) == (I, J)
     @test hess_coord_residual(nls, x, w) ≈ V
     for j = 1:ne
-      eⱼ = [i == j ? 1.0 : 0.0 for i = 1:ne]
+      eⱼ = [i == j ? one(T) : zero(T) for i = 1:ne]
       @test jth_hess_residual(nls, x, j) ≈ HF(x, eⱼ)
       @test hprod_residual(nls, x, j, v) ≈ HF(x, eⱼ) * v
       Hop = hess_op_residual(nls, x, j)
@@ -66,7 +66,6 @@
       @test mul!(z, Hop, v, one(T), -one(T)) ≈ res
       Hop = hess_op_residual!(nls, x, j, Hv)
       @test Hop * v ≈ HF(x, eⱼ) * v
-      z .= 1
       res = HF(x, eⱼ) * v - z
       @test mul!(z, Hop, v, one(T), -one(T)) ≈ res
     end
