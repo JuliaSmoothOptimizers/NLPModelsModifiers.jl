@@ -473,6 +473,7 @@ function NLPModels.jac_op_residual!(
     else
       @. res = α * Jv + β * res
     end
+    return res
   end
   ctprod! = @closure (res, v, α, β) -> begin
     jtprod_residual!(nls, x, v, Jtv)
@@ -481,6 +482,7 @@ function NLPModels.jac_op_residual!(
     else
       @. res = α * Jtv + β * res
     end
+    return res
   end
   return LinearOperator{eltype(x)}(
     nls_meta(nls).nequ,
@@ -572,6 +574,7 @@ function NLPModels.hess_op_residual!(
     else
       @. res = α * Hiv + β * res
     end
+    return res
   end
   return LinearOperator{eltype(x)}(
     nls_meta(nls).nvar,

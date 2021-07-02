@@ -267,10 +267,11 @@ function NLPModels.hprod!(
   @lencheck nlp.meta.ncon y
   n, m, ne = nlp.internal.meta.nvar, nlp.internal.meta.ncon, nlp.internal.nls_meta.nequ
   x = @view xr[1:n]
+  T = eltype(xr)
   if m > 0
-    @views hprod!(nlp.internal, x, y[(ne + 1):end], v[1:n], hv[1:n], obj_weight = 0.0)
+    @views hprod!(nlp.internal, x, y[(ne + 1):end], v[1:n], hv[1:n], obj_weight = zero(T))
   else
-    fill!(hv, 0.0)
+    fill!(hv, zero(T))
   end
   for i = 1:ne
     @views hv[1:n] .+= hprod_residual(nlp.internal, x, i, v[1:n]) * y[i]
