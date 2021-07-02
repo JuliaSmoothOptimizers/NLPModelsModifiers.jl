@@ -151,9 +151,10 @@ end
 
 function NLPModels.jth_hess_residual(nls::FeasibilityResidual, x::AbstractVector, i::Int)
   increment!(nls, :neval_jhess_residual)
-  y = zeros(nls.nls_meta.nequ)
-  y[i] = 1.0
-  return hess(nls.nlp, x, y, obj_weight = 0.0)
+  T = eltype(x)
+  y = zeros(T, nls.nls_meta.nequ)
+  y[i] = one(T)
+  return hess(nls.nlp, x, y, obj_weight = zero(T))
 end
 
 function NLPModels.hprod_residual!(
@@ -164,9 +165,10 @@ function NLPModels.hprod_residual!(
   Hiv::AbstractVector,
 )
   increment!(nls, :neval_hprod_residual)
-  y = zeros(nls.nls_meta.nequ)
-  y[i] = 1.0
-  return hprod!(nls.nlp, x, y, v, Hiv, obj_weight = 0.0)
+  T = eltype(x)
+  y = zeros(T, nls.nls_meta.nequ)
+  y[i] = one(T)
+  return hprod!(nls.nlp, x, y, v, Hiv, obj_weight = zero(T))
 end
 
 function NLPModels.hess(

@@ -12,21 +12,21 @@
       n = nlp.meta.nvar
       m = nlp.meta.ncon
 
-      s, y = randn(n), randn(n)
+      s, y = randn(T, n), randn(T, n)
       B = QNO(n)
       push!(B, s, y)
       push!(nlp, s, y)
       H(x) = B
       H(x, y) = B
 
-      y = randn(m)
-      x = randn(n)
-      v = randn(n)
-      w = randn(m)
-      Jv = zeros(m)
-      Jtw = zeros(n)
-      Hv = zeros(n)
-      Hvals = zeros(nlp.meta.nnzh)
+      y = randn(T, m)
+      x = randn(T, n)
+      v = randn(T, n)
+      w = randn(T, m)
+      Jv = zeros(T, m)
+      Jtw = zeros(T, n)
+      Hv = zeros(T, n)
+      Hvals = zeros(T, nlp.meta.nnzh)
 
       # Basic methods
       @test obj(nlp, x) ≈ f(x)

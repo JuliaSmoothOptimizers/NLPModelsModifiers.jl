@@ -2,23 +2,23 @@
   @testset "API" for T in [Float64, Float32]
     f(x) = (x[1] - 2)^2 + (x[2] - 1)^2
     ∇f(x) = [2 * (x[1] - 2); 2 * (x[2] - 1); 0]
-    H(x) = [2.0 0 0; 0 2.0 0; 0 0 0]
-    c(x) = [x[1] - 2x[2] + 1; -x[1]^2 / 4 - x[2]^2 + 1 - x[3]]
-    J(x) = [1.0 -2.0 0; -0.5x[1] -2.0x[2] -1]
-    H(x, y) = H(x) + y[2] * [-0.5 0 0; 0 -2.0 0; 0 0 0]
+    H(x) = T[2.0 0 0; 0 2.0 0; 0 0 0]
+    c(x) = T[x[1] - 2x[2] + 1; -x[1]^2 / 4 - x[2]^2 + 1 - x[3]]
+    J(x) = T[1.0 -2.0 0; -0.5x[1] -2.0x[2] -1]
+    H(x, y) = H(x) + y[2] * T[-0.5 0 0; 0 -2.0 0; 0 0 0]
 
     nlp = SlackModel(SimpleNLPModel(T))
     n = nlp.meta.nvar
     m = nlp.meta.ncon
 
-    x = randn(n)
-    y = randn(m)
-    v = randn(n)
-    w = randn(m)
-    Jv = zeros(m)
-    Jtw = zeros(n)
-    Hv = zeros(n)
-    Hvals = zeros(nlp.meta.nnzh)
+    x = randn(T, n)
+    y = randn(T, m)
+    v = randn(T, n)
+    w = randn(T, m)
+    Jv = zeros(T, m)
+    Jtw = zeros(T, n)
+    Hv = zeros(T, n)
+    Hvals = zeros(T, nlp.meta.nnzh)
 
     # Basic methods
     @test obj(nlp, x) ≈ f(x)

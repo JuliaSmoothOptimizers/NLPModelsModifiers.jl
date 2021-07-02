@@ -233,7 +233,7 @@ function NLPModels.hess_coord!(
   xr::AbstractVector,
   y::AbstractVector,
   vals::AbstractVector;
-  obj_weight::Float64 = 1.0,
+  obj_weight::Real = one(eltype(xr)),
 )
   @lencheck nlp.meta.nvar xr
   @lencheck nlp.meta.ncon y
@@ -261,7 +261,7 @@ function NLPModels.hprod!(
   y::AbstractVector,
   v::AbstractVector,
   hv::AbstractVector;
-  obj_weight::Float64 = 1.0,
+  obj_weight::Real = one(eltype(xr)),
 )
   @lencheck nlp.meta.nvar xr v hv
   @lencheck nlp.meta.ncon y

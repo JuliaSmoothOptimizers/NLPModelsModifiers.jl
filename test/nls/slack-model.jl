@@ -1,20 +1,20 @@
 @testset "SlackNLSModel tests" begin
   @testset "NLS API" for T in [Float64, Float32]
-    F(x) = [1 - x[1]; 10 * (x[2] - x[1]^2)]
-    JF(x) = [-1.0 0 0 0; -20*x[1] 10 0 0]
-    HF(x, w) = w[2] * diagm(0 => [-20.0; zeros(3)])
+    F(x) = T[1 - x[1]; 10 * (x[2] - x[1]^2)]
+    JF(x) = T[-1.0 0 0 0; -20*x[1] 10 0 0]
+    HF(x, w) = w[2] * diagm(0 => T[-20.0; zeros(T, 3)])
 
     nls = SlackNLSModel(SimpleNLSModel(T))
     n = nls.meta.nvar
     m = nls.meta.ncon
     ne = nls_meta(nls).nequ
 
-    x = randn(n)
-    v = randn(n)
-    w = randn(ne)
-    Jv = zeros(ne)
-    Jtw = zeros(n)
-    Hv = zeros(n)
+    x = randn(T, n)
+    v = randn(T, n)
+    w = randn(T, ne)
+    Jv = zeros(T, ne)
+    Jtw = zeros(T, n)
+    Hv = zeros(T, n)
 
     @test residual(nls, x) ≈ F(x)
     @test jac_residual(nls, x) ≈ JF(x)
@@ -62,28 +62,28 @@
   end
 
   @testset "NLP API" for T in [Float64, Float32]
-    F(x) = [1 - x[1]; 10 * (x[2] - x[1]^2)]
-    JF(x) = [-1.0 0 0 0; -20*x[1] 10 0 0]
-    HF(x, w) = w[2] * diagm(0 => [-20.0; zeros(3)])
+    F(x) = T[1 - x[1]; 10 * (x[2] - x[1]^2)]
+    JF(x) = T[-1.0 0 0 0; -20*x[1] 10 0 0]
+    HF(x, w) = w[2] * diagm(0 => T[-20.0; zeros(T, 3)])
     f(x) = norm(F(x))^2 / 2
     ∇f(x) = JF(x)' * F(x)
     H(x) = JF(x)' * JF(x) + HF(x, F(x))
-    c(x) = [x[1] + x[2]^2 - x[3]; x[1]^2 + x[2] - x[4]; x[1]^2 + x[2]^2 - 1]
-    J(x) = [1 2x[2] -1 0; 2x[1] 1 0 -1; 2x[1] 2x[2] 0 0]
-    H(x, y) = H(x) + diagm(0 => [2y[2] + 2y[3]; 2y[1] + 2y[3]; 0; 0])
+    c(x) = T[x[1] + x[2]^2 - x[3]; x[1]^2 + x[2] - x[4]; x[1]^2 + x[2]^2 - 1]
+    J(x) = T[1 2x[2] -1 0; 2x[1] 1 0 -1; 2x[1] 2x[2] 0 0]
+    H(x, y) = H(x) + diagm(0 => T[2y[2] + 2y[3]; 2y[1] + 2y[3]; 0; 0])
 
     nls = SlackNLSModel(SimpleNLSModel(T))
     n = nls.meta.nvar
     m = nls.meta.ncon
 
-    x = randn(n)
-    y = randn(m)
-    v = randn(n)
-    w = randn(m)
-    Jv = zeros(m)
-    Jtw = zeros(n)
-    Hv = zeros(n)
-    Hvals = zeros(nls.meta.nnzh)
+    x = randn(T, n)
+    y = randn(T, m)
+    v = randn(T, n)
+    w = randn(T, m)
+    Jv = zeros(T, m)
+    Jtw = zeros(T, n)
+    Hv = zeros(T, n)
+    Hvals = zeros(T, nls.meta.nnzh)
 
     fx, gx = objgrad!(nls, x, v)
     @test obj(nls, x) ≈ norm(F(x))^2 / 2 ≈ fx ≈ f(x)

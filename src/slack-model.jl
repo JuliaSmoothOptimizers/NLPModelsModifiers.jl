@@ -108,6 +108,7 @@ function slack_meta(meta::NLPModelMeta{T, S}; name = meta.name * "-slack") where
     lin = meta.lin,
     nln = meta.nln,
     name = name,
+    minimize = meta.minimize,
   )
 end
 
@@ -465,16 +466,30 @@ function NLPModels.jac_op_residual!(
 )
   @lencheck nls.meta.nvar x Jtv
   @lencheck nls.nls_meta.nequ Jv
-  prod = @closure v -> jprod_residual!(nls, x, v, Jv)
-  ctprod = @closure v -> jtprod_residual!(nls, x, v, Jtv)
+  prod! = @closure (res, v, α, β) -> begin
+    jprod_residual!(nls, x, v, Jv)
+    if β == 0
+      @. res = α * Jv
+    else
+      @. res = α * Jv + β * res
+    end
+  end
+  ctprod! = @closure (res, v, α, β) -> begin
+    jtprod_residual!(nls, x, v, Jtv)
+    if β == 0
+      @. res = α * Jtv
+    else
+      @. res = α * Jtv + β * res
+    end
+  end
   return LinearOperator{eltype(x)}(
     nls_meta(nls).nequ,
     nls_meta(nls).nvar,
     false,
     false,
-    prod,
-    ctprod,
-    ctprod,
+    prod!,
+    ctprod!,
+    ctprod!,
   )
 end
 
@@ -550,14 +565,21 @@ function NLPModels.hess_op_residual!(
   Hiv::AbstractVector,
 )
   @lencheck nls.meta.nvar x Hiv
-  prod = @closure v -> hprod_residual!(nls, x, i, v, Hiv)
+  prod! = @closure (res, v, α, β) -> begin
+    hprod_residual!(nls, x, i, v, Hiv)
+    if β == 0
+      @. res = α * Hiv
+    else
+      @. res = α * Hiv + β * res
+    end
+  end
   return LinearOperator{eltype(x)}(
     nls_meta(nls).nvar,
     nls_meta(nls).nvar,
     true,
     true,
-    prod,
-    prod,
-    prod,
+    prod!,
+    prod!,
+    prod!,
   )
 end
