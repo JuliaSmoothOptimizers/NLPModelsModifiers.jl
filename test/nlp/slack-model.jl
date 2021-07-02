@@ -1,24 +1,24 @@
 @testset "SlackModel NLP tests" begin
   @testset "API" for T in [Float64, Float32]
     f(x) = (x[1] - 2)^2 + (x[2] - 1)^2
-    ∇f(x) = [2 * (x[1] - 2); 2 * (x[2] - 1); 0]
-    H(x) = [2.0 0 0; 0 2.0 0; 0 0 0]
-    c(x) = [x[1] - 2x[2] + 1; -x[1]^2 / 4 - x[2]^2 + 1 - x[3]]
-    J(x) = [1.0 -2.0 0; -0.5x[1] -2.0x[2] -1]
-    H(x, y) = H(x) + y[2] * [-0.5 0 0; 0 -2.0 0; 0 0 0]
+    ∇f(x) = T[2 * (x[1] - 2); 2 * (x[2] - 1); 0]
+    H(x) = T[2.0 0 0; 0 2.0 0; 0 0 0]
+    c(x) = T[x[1] - 2x[2] + 1; -x[1]^2 / 4 - x[2]^2 + 1 - x[3]]
+    J(x) = T[1.0 -2.0 0; -0.5x[1] -2.0x[2] -1]
+    H(x, y) = H(x) + y[2] * T[-0.5 0 0; 0 -2.0 0; 0 0 0]
 
     nlp = SlackModel(SimpleNLPModel(T))
     n = nlp.meta.nvar
     m = nlp.meta.ncon
 
-    x = randn(n)
-    y = randn(m)
-    v = randn(n)
-    w = randn(m)
-    Jv = zeros(m)
-    Jtw = zeros(n)
-    Hv = zeros(n)
-    Hvals = zeros(nlp.meta.nnzh)
+    x = randn(T, n)
+    y = randn(T, m)
+    v = randn(T, n)
+    w = randn(T, m)
+    Jv = zeros(T, m)
+    Jtw = zeros(T, n)
+    Hv = zeros(T, n)
+    Hvals = zeros(T, nlp.meta.nnzh)
 
     # Basic methods
     @test obj(nlp, x) ≈ f(x)
@@ -52,15 +52,23 @@
     Jop = jac_op!(nlp, x, Jv, Jtw)
     @test Jop * v ≈ J(x) * v
     @test Jop' * w ≈ J(x)' * w
+    res = J(x) * v - w
+    @test mul!(w, Jop, v, one(T), -one(T)) ≈ res
+    res = J(x)' * w - v
+    @test mul!(v, Jop', w, one(T), -one(T)) ≈ res
     Jop = jac_op!(nlp, jac_structure(nlp)..., jac_coord(nlp, x), Jv, Jtw)
     @test Jop * v ≈ J(x) * v
     @test Jop' * w ≈ J(x)' * w
+    res = J(x) * v - w
+    @test mul!(w, Jop, v, one(T), -one(T)) ≈ res
+    res = J(x)' * w - v
+    @test mul!(v, Jop', w, one(T), -one(T)) ≈ res
     Jop = jac_op!(nlp, x, jac_structure(nlp)..., Jv, Jtw)
     @test Jop * v ≈ J(x) * v
     @test Jop' * w ≈ J(x)' * w
-    ghjv = zeros(m)
+    ghjv = zeros(T, m)
     for j = 1:m
-      eⱼ = [i == j ? 1.0 : 0.0 for i = 1:m]
+      eⱼ = [i == j ? one(T) : zero(T) for i = 1:m]
       Cⱼ(x) = H(x, eⱼ) - H(x)
       ghjv[j] = dot(gx, Cⱼ(x) * v)
     end
@@ -73,14 +81,21 @@
     @test Hop * v ≈ H(x) * v
     Hop = hess_op!(nlp, x, Hv)
     @test Hop * v ≈ H(x) * v
+    z = ones(T, nlp.meta.nvar)
+    res = H(x) * v - z
+    @test mul!(z, Hop, v, one(T), -one(T)) ≈ res
     Hop = hess_op!(nlp, hess_structure(nlp)..., hess_coord(nlp, x), Hv)
     @test Hop * v ≈ H(x) * v
+    res = H(x) * v - z
+    @test mul!(z, Hop, v, one(T), -one(T)) ≈ res
     Hop = hess_op!(nlp, x, hess_structure(nlp)..., Hv)
     @test Hop * v ≈ H(x) * v
     Hop = hess_op(nlp, x, y)
     @test Hop * v ≈ H(x, y) * v
     Hop = hess_op!(nlp, x, y, Hv)
     @test Hop * v ≈ H(x, y) * v
+    res = H(x, y) * v - z
+    @test mul!(z, Hop, v, one(T), -one(T)) ≈ res
     Hop = hess_op!(nlp, hess_structure(nlp)..., hess_coord(nlp, x, y), Hv)
     @test Hop * v ≈ H(x, y) * v
     Hop = hess_op!(nlp, x, y, hess_structure(nlp)..., Hv)

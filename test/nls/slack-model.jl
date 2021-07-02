@@ -1,20 +1,20 @@
 @testset "SlackNLSModel tests" begin
   @testset "NLS API" for T in [Float64, Float32]
-    F(x) = [1 - x[1]; 10 * (x[2] - x[1]^2)]
-    JF(x) = [-1.0 0 0 0; -20*x[1] 10 0 0]
-    HF(x, w) = w[2] * diagm(0 => [-20.0; zeros(3)])
+    F(x) = T[1 - x[1]; 10 * (x[2] - x[1]^2)]
+    JF(x) = T[-1.0 0 0 0; -20*x[1] 10 0 0]
+    HF(x, w) = w[2] * diagm(0 => T[-20.0; zeros(T, 3)])
 
     nls = SlackNLSModel(SimpleNLSModel(T))
     n = nls.meta.nvar
     m = nls.meta.ncon
     ne = nls_meta(nls).nequ
 
-    x = randn(n)
-    v = randn(n)
-    w = randn(ne)
-    Jv = zeros(ne)
-    Jtw = zeros(n)
-    Hv = zeros(n)
+    x = randn(T, n)
+    v = randn(T, n)
+    w = randn(T, ne)
+    Jv = zeros(T, ne)
+    Jtw = zeros(T, n)
+    Hv = zeros(T, n)
 
     @test residual(nls, x) ≈ F(x)
     @test jac_residual(nls, x) ≈ JF(x)
@@ -35,12 +35,20 @@
     Jop = jac_op_residual(nls, x)
     @test Jop * v ≈ JF(x) * v
     @test Jop' * w ≈ JF(x)' * w
+    res = JF(x) * v - w
+    @test mul!(w, Jop, v, one(T), -one(T)) ≈ res
+    res = JF(x)' * w - v
+    @test mul!(v, Jop', w, one(T), -one(T)) ≈ res
     Jop = jac_op_residual!(nls, x, Jv, Jtw)
     @test Jop * v ≈ JF(x) * v
     @test Jop' * w ≈ JF(x)' * w
     Jop = jac_op_residual!(nls, jac_structure_residual(nls)..., jac_coord_residual(nls, x), Jv, Jtw)
     @test Jop * v ≈ JF(x) * v
     @test Jop' * w ≈ JF(x)' * w
+    res = JF(x) * v - w
+    @test mul!(w, Jop, v, one(T), -one(T)) ≈ res
+    res = JF(x)' * w - v
+    @test mul!(v, Jop', w, one(T), -one(T)) ≈ res
     Jop = jac_op_residual!(nls, x, jac_structure_residual(nls)..., Jv, Jtw)
     @test Jop * v ≈ JF(x) * v
     @test Jop' * w ≈ JF(x)' * w
@@ -48,13 +56,18 @@
     @test hess_structure_residual(nls) == (I, J)
     @test hess_coord_residual(nls, x, w) ≈ V
     for j = 1:ne
-      eⱼ = [i == j ? 1.0 : 0.0 for i = 1:ne]
+      eⱼ = [i == j ? one(T) : zero(T) for i = 1:ne]
       @test jth_hess_residual(nls, x, j) ≈ HF(x, eⱼ)
       @test hprod_residual(nls, x, j, v) ≈ HF(x, eⱼ) * v
       Hop = hess_op_residual(nls, x, j)
       @test Hop * v ≈ HF(x, eⱼ) * v
+      z = ones(T, nls.meta.nvar)
+      res = HF(x, eⱼ) * v - z
+      @test mul!(z, Hop, v, one(T), -one(T)) ≈ res
       Hop = hess_op_residual!(nls, x, j, Hv)
       @test Hop * v ≈ HF(x, eⱼ) * v
+      res = HF(x, eⱼ) * v - z
+      @test mul!(z, Hop, v, one(T), -one(T)) ≈ res
     end
     fx, gx = objgrad!(nls, x, v)
     @test obj(nls, x) ≈ norm(F(x))^2 / 2 ≈ fx
@@ -62,28 +75,28 @@
   end
 
   @testset "NLP API" for T in [Float64, Float32]
-    F(x) = [1 - x[1]; 10 * (x[2] - x[1]^2)]
-    JF(x) = [-1.0 0 0 0; -20*x[1] 10 0 0]
-    HF(x, w) = w[2] * diagm(0 => [-20.0; zeros(3)])
+    F(x) = T[1 - x[1]; 10 * (x[2] - x[1]^2)]
+    JF(x) = T[-1.0 0 0 0; -20*x[1] 10 0 0]
+    HF(x, w) = w[2] * diagm(0 => T[-20.0; zeros(T, 3)])
     f(x) = norm(F(x))^2 / 2
     ∇f(x) = JF(x)' * F(x)
     H(x) = JF(x)' * JF(x) + HF(x, F(x))
-    c(x) = [x[1] + x[2]^2 - x[3]; x[1]^2 + x[2] - x[4]; x[1]^2 + x[2]^2 - 1]
-    J(x) = [1 2x[2] -1 0; 2x[1] 1 0 -1; 2x[1] 2x[2] 0 0]
-    H(x, y) = H(x) + diagm(0 => [2y[2] + 2y[3]; 2y[1] + 2y[3]; 0; 0])
+    c(x) = T[x[1] + x[2]^2 - x[3]; x[1]^2 + x[2] - x[4]; x[1]^2 + x[2]^2 - 1]
+    J(x) = T[1 2x[2] -1 0; 2x[1] 1 0 -1; 2x[1] 2x[2] 0 0]
+    H(x, y) = H(x) + diagm(0 => T[2y[2] + 2y[3]; 2y[1] + 2y[3]; 0; 0])
 
     nls = SlackNLSModel(SimpleNLSModel(T))
     n = nls.meta.nvar
     m = nls.meta.ncon
 
-    x = randn(n)
-    y = randn(m)
-    v = randn(n)
-    w = randn(m)
-    Jv = zeros(m)
-    Jtw = zeros(n)
-    Hv = zeros(n)
-    Hvals = zeros(nls.meta.nnzh)
+    x = randn(T, n)
+    y = randn(T, m)
+    v = randn(T, n)
+    w = randn(T, m)
+    Jv = zeros(T, m)
+    Jtw = zeros(T, n)
+    Hv = zeros(T, n)
+    Hvals = zeros(T, nls.meta.nnzh)
 
     fx, gx = objgrad!(nls, x, v)
     @test obj(nls, x) ≈ norm(F(x))^2 / 2 ≈ fx ≈ f(x)
@@ -115,15 +128,19 @@
     Jop = jac_op!(nls, x, Jv, Jtw)
     @test Jop * v ≈ J(x) * v
     @test Jop' * w ≈ J(x)' * w
+    res = J(x) * v - w
+    @test mul!(w, Jop, v, one(T), -one(T)) ≈ res
+    res = J(x)' * w - v
+    @test mul!(v, Jop', w, one(T), -one(T)) ≈ res
     Jop = jac_op!(nls, jac_structure(nls)..., jac_coord(nls, x), Jv, Jtw)
     @test Jop * v ≈ J(x) * v
     @test Jop' * w ≈ J(x)' * w
     Jop = jac_op!(nls, x, jac_structure(nls)..., Jv, Jtw)
     @test Jop * v ≈ J(x) * v
     @test Jop' * w ≈ J(x)' * w
-    ghjv = zeros(m)
+    ghjv = zeros(T, m)
     for j = 1:m
-      eⱼ = [i == j ? 1.0 : 0.0 for i = 1:m]
+      eⱼ = [i == j ? one(T) : zero(T) for i = 1:m]
       Cⱼ(x) = H(x, eⱼ) - H(x)
       ghjv[j] = dot(gx, Cⱼ(x) * v)
     end
@@ -134,10 +151,16 @@
     @test hprod!(nls, x, y, hess_structure(nls)..., v, Hv) ≈ H(x, y) * v
     Hop = hess_op(nls, x)
     @test Hop * v ≈ H(x) * v
+    z = ones(T, nls.meta.nvar)
+    res = H(x) * v - z
+    @test mul!(z, Hop, v, one(T), -one(T)) ≈ res
     Hop = hess_op!(nls, x, Hv)
     @test Hop * v ≈ H(x) * v
     Hop = hess_op!(nls, hess_structure(nls)..., hess_coord(nls, x), Hv)
+    z .= 1
     @test Hop * v ≈ H(x) * v
+    res = H(x) * v - z
+    @test mul!(z, Hop, v, one(T), -one(T)) ≈ res
     Hop = hess_op!(nls, x, hess_structure(nls)..., Hv)
     @test Hop * v ≈ H(x) * v
     Hop = hess_op(nls, x, y)

@@ -84,7 +84,7 @@ function NLPModels.hprod!(
   Hv::AbstractVector;
   kwargs...,
 )
-  Hv[1:(nlp.meta.nvar)] .= nlp.op * v
+  @views mul!(Hv[1:(nlp.meta.nvar)], nlp.op, v)
   return Hv
 end
 

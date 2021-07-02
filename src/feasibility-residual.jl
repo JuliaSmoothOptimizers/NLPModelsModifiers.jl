@@ -128,7 +128,7 @@ end
 
 function NLPModels.hess_residual(nls::FeasibilityResidual, x::AbstractVector, v::AbstractVector)
   increment!(nls, :neval_hess_residual)
-  return hess(nls.nlp, x, v, obj_weight = 0.0)
+  return hess(nls.nlp, x, v, obj_weight = zero(eltype(x)))
 end
 
 function NLPModels.hess_structure_residual!(
@@ -146,14 +146,15 @@ function NLPModels.hess_coord_residual!(
   vals::AbstractVector,
 )
   increment!(nls, :neval_hess_residual)
-  return hess_coord!(nls.nlp, x, v, vals, obj_weight = 0.0)
+  return hess_coord!(nls.nlp, x, v, vals, obj_weight = zero(eltype(x)))
 end
 
 function NLPModels.jth_hess_residual(nls::FeasibilityResidual, x::AbstractVector, i::Int)
   increment!(nls, :neval_jhess_residual)
-  y = zeros(nls.nls_meta.nequ)
-  y[i] = 1.0
-  return hess(nls.nlp, x, y, obj_weight = 0.0)
+  T = eltype(x)
+  y = zeros(T, nls.nls_meta.nequ)
+  y[i] = one(T)
+  return hess(nls.nlp, x, y, obj_weight = zero(T))
 end
 
 function NLPModels.hprod_residual!(
@@ -164,9 +165,10 @@ function NLPModels.hprod_residual!(
   Hiv::AbstractVector,
 )
   increment!(nls, :neval_hprod_residual)
-  y = zeros(nls.nls_meta.nequ)
-  y[i] = 1.0
-  return hprod!(nls.nlp, x, y, v, Hiv, obj_weight = 0.0)
+  T = eltype(x)
+  y = zeros(T, nls.nls_meta.nequ)
+  y[i] = one(T)
+  return hprod!(nls.nlp, x, y, v, Hiv, obj_weight = zero(T))
 end
 
 function NLPModels.hess(
@@ -178,7 +180,7 @@ function NLPModels.hess(
   cx = cons(nls.nlp, x)
   Jx = jac(nls.nlp, x)
   Hx = tril(Jx' * Jx)
-  Hx .+= hess(nls.nlp, x, cx, obj_weight = 0.0).data
+  Hx .+= hess(nls.nlp, x, cx, obj_weight = zero(eltype(x))).data
   return Symmetric(obj_weight * Hx, :L)
 end
 
@@ -193,8 +195,9 @@ function NLPModels.hprod!(
   cx = cons(nls.nlp, x)
   Jv = jprod(nls.nlp, x, v)
   jtprod!(nls.nlp, x, Jv, Hv)
-  Hiv = zeros(eltype(x), nls.meta.nvar)
-  hprod!(nls.nlp, x, cx, v, Hiv, obj_weight = 0.0)
+  T = eltype(x)
+  Hiv = zeros(T, nls.meta.nvar)
+  hprod!(nls.nlp, x, cx, v, Hiv, obj_weight = zero(T))
   Hv .+= Hiv
   Hv .*= obj_weight
   return Hv

@@ -1,20 +1,20 @@
 @testset "FeasibilityFormNLS tests" begin
   @testset "NLS API" for T in [Float64, Float32]
     F(x) = [x[3]; x[4]]
-    JF(x) = Float64[0 0 1 0; 0 0 0 1]
-    HF(x, w) = zeros(4, 4)
+    JF(x) = T[0 0 1 0; 0 0 0 1]
+    HF(x, w) = zeros(T, 4, 4)
 
     nls = FeasibilityFormNLS(SimpleNLSModel(T))
     n = nls.meta.nvar
     m = nls.meta.ncon
     ne = nls_meta(nls).nequ
 
-    x = randn(n)
-    v = randn(n)
-    w = randn(ne)
-    Jv = zeros(ne)
-    Jtw = zeros(n)
-    Hv = zeros(n)
+    x = randn(T, n)
+    v = randn(T, n)
+    w = randn(T, ne)
+    Jv = zeros(T, ne)
+    Jtw = zeros(T, n)
+    Hv = zeros(T, n)
 
     @test residual(nls, x) ≈ F(x)
     @test jac_residual(nls, x) ≈ JF(x)
@@ -59,34 +59,34 @@
   end
 
   @testset "NLP API" for T in [Float64, Float32]
-    F(x) = [x[3]; x[4]]
-    JF(x) = Float64[0 0 1 0; 0 0 0 1]
-    HF(x, w) = zeros(4, 4)
+    F(x) = T[x[3]; x[4]]
+    JF(x) = T[0 0 1 0; 0 0 0 1]
+    HF(x, w) = zeros(T, 4, 4)
     f(x) = norm(F(x))^2 / 2
     ∇f(x) = JF(x)' * F(x)
     H(x) = JF(x)' * JF(x) + HF(x, F(x))
-    c(x) = [
+    c(x) = T[
       1 - x[1] - x[3]
       10 * (x[2] - x[1]^2) - x[4]
       x[1] + x[2]^2
       x[1]^2 + x[2]
       x[1]^2 + x[2]^2 - 1
     ]
-    J(x) = [-1 0 -1 0; -20x[1] 10 0 -1; 1 2x[2] 0 0; 2x[1] 1 0 0; 2x[1] 2x[2] 0 0]
-    H(x, y) = H(x) + diagm(0 => [-20y[2] + 2y[4] + 2y[5]; 2y[3] + 2y[5]; 0; 0])
+    J(x) = T[-1 0 -1 0; -20x[1] 10 0 -1; 1 2x[2] 0 0; 2x[1] 1 0 0; 2x[1] 2x[2] 0 0]
+    H(x, y) = H(x) + diagm(0 => T[-20y[2] + 2y[4] + 2y[5]; 2y[3] + 2y[5]; 0; 0])
 
     nls = FeasibilityFormNLS(SimpleNLSModel(T))
     n = nls.meta.nvar
     m = nls.meta.ncon
 
-    x = randn(n)
-    y = randn(m)
-    v = randn(n)
-    w = randn(m)
-    Jv = zeros(m)
-    Jtw = zeros(n)
-    Hv = zeros(n)
-    Hvals = zeros(nls.meta.nnzh)
+    x = randn(T, n)
+    y = randn(T, m)
+    v = randn(T, n)
+    w = randn(T, m)
+    Jv = zeros(T, m)
+    Jtw = zeros(T, n)
+    Hv = zeros(T, n)
+    Hvals = zeros(T, nls.meta.nnzh)
 
     fx, gx = objgrad!(nls, x, v)
     @test obj(nls, x) ≈ norm(F(x))^2 / 2 ≈ fx ≈ f(x)
@@ -124,9 +124,9 @@
     Jop = jac_op!(nls, x, jac_structure(nls)..., Jv, Jtw)
     @test Jop * v ≈ J(x) * v
     @test Jop' * w ≈ J(x)' * w
-    ghjv = zeros(m)
+    ghjv = zeros(T, m)
     for j = 1:m
-      eⱼ = [i == j ? 1.0 : 0.0 for i = 1:m]
+      eⱼ = [i == j ? one(T) : zero(T) for i = 1:m]
       Cⱼ(x) = H(x, eⱼ) - H(x)
       ghjv[j] = dot(gx, Cⱼ(x) * v)
     end

@@ -1,19 +1,19 @@
 @testset "FeasibilityResidual tests" begin
   @testset "NLS API" for T in [Float64, Float32]
-    F(x) = [x[1] - 2x[2] + 1; -x[1]^2 / 4 - x[2]^2 + 1 - x[3]]
-    JF(x) = [1.0 -2.0 0; -0.5x[1] -2.0x[2] -1]
-    HF(x, w) = w[2] * diagm(0 => [-0.5; -2.0; 0.0])
+    F(x) = T[x[1] - 2x[2] + 1; -x[1]^2 / 4 - x[2]^2 + 1 - x[3]]
+    JF(x) = T[1.0 -2.0 0; -0.5x[1] -2.0x[2] -1]
+    HF(x, w) = w[2] * diagm(0 => T[-0.5; -2.0; 0.0])
 
     nls = FeasibilityResidual(SimpleNLPModel(T))
     n = nls.meta.nvar
     ne = nls_meta(nls).nequ
 
-    x = randn(n)
-    v = randn(n)
-    w = randn(ne)
-    Jv = zeros(ne)
-    Jtw = zeros(n)
-    Hv = zeros(n)
+    x = randn(T, n)
+    v = randn(T, n)
+    w = randn(T, ne)
+    Jv = zeros(T, ne)
+    Jtw = zeros(T, n)
+    Hv = zeros(T, n)
 
     @test residual(nls, x) ≈ F(x)
     @test jac_residual(nls, x) ≈ JF(x)
@@ -47,7 +47,7 @@
     @test hess_structure_residual(nls) == (I, J)
     @test hess_coord_residual(nls, x, w) ≈ V
     for j = 1:ne
-      eⱼ = [i == j ? 1.0 : 0.0 for i = 1:ne]
+      eⱼ = [i == j ? one(T) : zero(T) for i = 1:ne]
       @test jth_hess_residual(nls, x, j) ≈ HF(x, eⱼ)
       @test hprod_residual(nls, x, j, v) ≈ HF(x, eⱼ) * v
       Hop = hess_op_residual(nls, x, j)
@@ -61,9 +61,9 @@
   end
 
   @testset "NLP API" for T in [Float64, Float32]
-    F(x) = [x[1] - 2x[2] + 1; -x[1]^2 / 4 - x[2]^2 + 1 - x[3]]
-    JF(x) = [1.0 -2.0 0; -0.5x[1] -2.0x[2] -1]
-    HF(x, w) = w[2] * diagm(0 => [-0.5; -2.0; 0.0])
+    F(x) = T[x[1] - 2x[2] + 1; -x[1]^2 / 4 - x[2]^2 + 1 - x[3]]
+    JF(x) = T[1.0 -2.0 0; -0.5x[1] -2.0x[2] -1]
+    HF(x, w) = w[2] * diagm(0 => T[-0.5; -2.0; 0.0])
     f(x) = norm(F(x))^2 / 2
     ∇f(x) = JF(x)' * F(x)
     H(x) = JF(x)' * JF(x) + HF(x, F(x))
@@ -71,10 +71,10 @@
     nls = FeasibilityResidual(SimpleNLPModel(T))
     n = nls.meta.nvar
 
-    x = randn(n)
-    v = randn(n)
-    Hv = zeros(n)
-    Hvals = zeros(nls.meta.nnzh)
+    x = randn(T, n)
+    v = randn(T, n)
+    Hv = zeros(T, n)
+    Hvals = zeros(T, nls.meta.nnzh)
 
     fx, gx = objgrad!(nls, x, v)
     @test obj(nls, x) ≈ norm(F(x))^2 / 2 ≈ fx ≈ f(x)

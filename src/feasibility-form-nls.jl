@@ -233,7 +233,7 @@ function NLPModels.hess_coord!(
   xr::AbstractVector,
   y::AbstractVector,
   vals::AbstractVector;
-  obj_weight::Float64 = 1.0,
+  obj_weight::Real = one(eltype(xr)),
 )
   @lencheck nlp.meta.nvar xr
   @lencheck nlp.meta.ncon y
@@ -261,16 +261,17 @@ function NLPModels.hprod!(
   y::AbstractVector,
   v::AbstractVector,
   hv::AbstractVector;
-  obj_weight::Float64 = 1.0,
+  obj_weight::Real = one(eltype(xr)),
 )
   @lencheck nlp.meta.nvar xr v hv
   @lencheck nlp.meta.ncon y
   n, m, ne = nlp.internal.meta.nvar, nlp.internal.meta.ncon, nlp.internal.nls_meta.nequ
   x = @view xr[1:n]
+  T = eltype(xr)
   if m > 0
-    @views hprod!(nlp.internal, x, y[(ne + 1):end], v[1:n], hv[1:n], obj_weight = 0.0)
+    @views hprod!(nlp.internal, x, y[(ne + 1):end], v[1:n], hv[1:n], obj_weight = zero(T))
   else
-    fill!(hv, 0.0)
+    fill!(hv, zero(T))
   end
   for i = 1:ne
     @views hv[1:n] .+= hprod_residual(nlp.internal, x, i, v[1:n]) * y[i]
@@ -356,7 +357,7 @@ function NLPModels.jtprod_residual!(
   @lencheck nlp.nls_meta.nequ v
   increment!(nlp, :neval_jtprod_residual)
   n, ne = nlp.internal.meta.nvar, nlp.internal.nls_meta.nequ
-  Jtv[1:n] .= 0.0
+  Jtv[1:n] .= zero(eltype(x))
   Jtv[(n + 1):end] .= v
   return Jtv
 end
@@ -387,7 +388,7 @@ function NLPModels.jth_hess_residual(nlp::FeasibilityFormNLS, x::AbstractVector,
   @lencheck nlp.meta.nvar x
   increment!(nlp, :neval_jhess_residual)
   n = nlp.meta.nvar
-  return spzeros(n, n)
+  return spzeros(eltype(x), n, n)
 end
 
 function NLPModels.hprod_residual!(
@@ -399,6 +400,6 @@ function NLPModels.hprod_residual!(
 )
   @lencheck nlp.meta.nvar x v Hiv
   increment!(nlp, :neval_hprod_residual)
-  fill!(Hiv, 0.0)
+  fill!(Hiv, zero(eltype(x)))
   return Hiv
 end
