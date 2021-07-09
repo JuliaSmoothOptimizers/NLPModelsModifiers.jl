@@ -11,9 +11,9 @@ The models in this package specialize on modifying existing methods.
 [![GitHub release](https://img.shields.io/github/release/JuliaSmoothOptimizers/NLPModelsModifiers.jl.svg)](https://github.com/JuliaSmoothOptimizers/NLPModelsModifiers.jl/releases/latest)
 [![](https://img.shields.io/badge/docs-stable-3f51b5.svg)](https://JuliaSmoothOptimizers.github.io/NLPModelsModifiers.jl/stable)
 [![](https://img.shields.io/badge/docs-latest-3f51b5.svg)](https://JuliaSmoothOptimizers.github.io/NLPModelsModifiers.jl/dev)
-[![codecov](https://codecov.io/gh/JuliaSmoothOptimizers/NLPModelsModifiers.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaSmoothOptimizers/NLPModelsModifiers.jl)
+[![codecov](https://codecov.io/gh/JuliaSmoothOptimizers/NLPModelsModifiers.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/JuliaSmoothOptimizers/NLPModelsModifiers.jl)
 
-![CI](https://github.com/JuliaSmoothOptimizers/NLPModelsModifiers.jl/workflows/CI/badge.svg?branch=master)
+![CI](https://github.com/JuliaSmoothOptimizers/NLPModelsModifiers.jl/workflows/CI/badge.svg?branch=main)
 [![Cirrus CI - Base Branch Build Status](https://img.shields.io/cirrus/github/JuliaSmoothOptimizers/NLPModelsModifiers.jl?logo=Cirrus%20CI)](https://cirrus-ci.com/github/JuliaSmoothOptimizers/NLPModelsModifiers.jl)
 
 ## Models
