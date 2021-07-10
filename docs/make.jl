@@ -13,4 +13,4 @@ makedocs(
   pages = ["Home" => "index.md", "Reference" => "reference.md"],
 )
 
-deploydocs(repo = "github.com/JuliaSmoothOptimizers/NLPModelsModifiers.jl.git", push_preview = true)
+deploydocs(repo = "github.com/JuliaSmoothOptimizers/NLPModelsModifiers.jl.git", push_preview = true, devbranch = "main")
