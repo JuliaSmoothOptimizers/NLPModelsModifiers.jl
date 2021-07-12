@@ -15,15 +15,15 @@ mutable struct LSR1Model{T, S} <: QuasiNewtonModel{T, S}
 end
 
 "Construct a `LBFGSModel` from another type of model."
-function LBFGSModel(nlp::AbstractNLPModel; kwargs...)
-  op = LBFGSOperator(nlp.meta.nvar; kwargs...)
-  return LBFGSModel(nlp.meta, nlp, op)
+function LBFGSModel(nlp::AbstractNLPModel{T, S}; kwargs...) where {T, S}
+  op = LBFGSOperator(T, nlp.meta.nvar; kwargs...)
+  return LBFGSModel{T, S}(nlp.meta, nlp, op)
 end
 
 "Construct a `LSR1Model` from another type of nlp."
-function LSR1Model(nlp::AbstractNLPModel; kwargs...)
-  op = LSR1Operator(nlp.meta.nvar; kwargs...)
-  return LSR1Model(nlp.meta, nlp, op)
+function LSR1Model(nlp::AbstractNLPModel{T, S}; kwargs...) where {T, S}
+  op = LSR1Operator(T, nlp.meta.nvar; kwargs...)
+  return LSR1Model{T, S}(nlp.meta, nlp, op)
 end
 
 NLPModels.show_header(io::IO, nlp::QuasiNewtonModel) =
