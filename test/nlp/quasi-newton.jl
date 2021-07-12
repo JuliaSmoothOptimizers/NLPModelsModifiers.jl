@@ -13,7 +13,7 @@
       m = nlp.meta.ncon
 
       s, y = randn(T, n), randn(T, n)
-      B = QNO(n)
+      B = QNO(T, n)
       push!(B, s, y)
       push!(nlp, s, y)
       H(x) = B
