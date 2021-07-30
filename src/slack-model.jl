@@ -44,9 +44,9 @@ The slack variables are implicitly ordered as `[s(low), s(upp), s(rng)]`, where
 ``c_L ≤ c(x) < ∞``, ``-∞ < c(x) ≤ c_U`` and
 ``c_L ≤ c(x) ≤ c_U``, respectively.
 """
-mutable struct SlackModel{T, S} <: AbstractNLPModel{T, S}
+mutable struct SlackModel{T, S, M <: AbstractNLPModel{T, S}} <: AbstractNLPModel{T, S}
   meta::NLPModelMeta{T, S}
-  model::AbstractNLPModel{T, S}
+  model::M
 end
 
 NLPModels.show_header(io::IO, nlp::SlackModel) =
@@ -60,10 +60,10 @@ end
 
 """Like `SlackModel`, this model converts inequalities into equalities and bounds.
 """
-mutable struct SlackNLSModel{T, S} <: AbstractNLSModel{T, S}
+mutable struct SlackNLSModel{T, S, M <: AbstractNLPModel{T, S}} <: AbstractNLSModel{T, S}
   meta::NLPModelMeta{T, S}
   nls_meta::NLSMeta{T, S}
-  model::AbstractNLPModel{T, S}
+  model::M
 end
 
 NLPModels.show_header(io::IO, nls::SlackNLSModel) =

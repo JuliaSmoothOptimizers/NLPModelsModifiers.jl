@@ -95,7 +95,7 @@
 
   @testset "Show" begin
     nls = FeasibilityResidual(SimpleNLSModel())
-    @test typeof(nls.nlp) == SlackNLSModel{Float64, Vector{Float64}}
+    @test typeof(nls.nlp) == SlackNLSModel{Float64, Vector{Float64}, SimpleNLSModel{Float64, Vector{Float64}}}
     io = IOBuffer()
     show(io, nls)
     showed = String(take!(io))
