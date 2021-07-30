@@ -25,11 +25,11 @@ The slack variables are created using SlackModel.
 If ``\\ell_i = u_i``, no slack variable is created.
 In particular, if there are only equality constrained of the form ``c(x) = 0``, the resulting NLS is simply ``\\min_x \\tfrac{1}{2}\\|c(x)\\|^2``.
 """
-mutable struct FeasibilityResidual{T, S} <: AbstractNLSModel{T, S}
+mutable struct FeasibilityResidual{T, S, M <: AbstractNLPModel{T, S}} <: AbstractNLSModel{T, S}
   meta::NLPModelMeta{T, S}
   nls_meta::NLSMeta{T, S}
   counters::NLSCounters
-  nlp::AbstractNLPModel{T, S}
+  nlp::M
 end
 
 function NLPModels.show_header(io::IO, nls::FeasibilityResidual)
