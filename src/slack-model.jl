@@ -75,7 +75,7 @@ function Base.show(io::IO, nls::SlackNLSModel)
   show(io, nls.model.counters)
 end
 
-function slack_meta(meta::NLPModelMeta{T, S}; name = meta.name * "-slack") where {T, S}
+function slack_meta(meta::AbstractNLPModelMeta{T, S}; name = meta.name * "-slack") where {T, S}
   ns = meta.ncon - length(meta.jfix)
   jlow = meta.jlow
   jupp = meta.jupp
