@@ -11,12 +11,144 @@ Modified problem 14 in the Hock-Schittkowski suite
 
 x₀ = [2.0, 2.0].
 """
-mutable struct SimpleNLPModel{T, S} <: AbstractNLPModel{T, S}
-  meta::NLPModelMeta{T, S}
+mutable struct SimpleNLPModel{T, S, M <: AbstractNLPModelMeta{T, S}} <: AbstractNLPModel{T, S}
+  meta::M
   counters::Counters
 end
 
-function SimpleNLPModel(::Type{T}) where {T}
+mutable struct SimpleNLPMeta{T, S} <: AbstractNLPModelMeta{T, S}
+  nvar::Int
+  x0::S
+  lvar::S
+  uvar::S
+
+  ifix::Vector{Int}
+  ilow::Vector{Int}
+  iupp::Vector{Int}
+  irng::Vector{Int}
+  ifree::Vector{Int}
+  iinf::Vector{Int}
+
+  nlvb::Int
+  nlvo::Int
+  nlvc::Int
+
+  ncon::Int
+  y0::S
+  lcon::S
+  ucon::S
+
+  jfix::Vector{Int}
+  jlow::Vector{Int}
+  jupp::Vector{Int}
+  jrng::Vector{Int}
+  jfree::Vector{Int}
+  jinf::Vector{Int}
+
+  nnzo::Int
+  nnzj::Int
+  nnzh::Int
+
+  nlin::Int
+  nnln::Int
+
+  lin::Vector{Int}
+  nln::Vector{Int}
+
+  minimize::Bool
+  islp::Bool
+  name::String
+  function SimpleNLPMeta{T, S}(
+    nvar::Int;
+    x0::S = fill!(S(undef, nvar), zero(T)),
+    lvar::S = fill!(S(undef, nvar), T(-Inf)),
+    uvar::S = fill!(S(undef, nvar), T(Inf)),
+    nlvb = nvar,
+    nlvo = nvar,
+    nlvc = nvar,
+    ncon = 0,
+    y0::S = fill!(S(undef, ncon), zero(T)),
+    lcon::S = fill!(S(undef, ncon), T(-Inf)),
+    ucon::S = fill!(S(undef, ncon), T(Inf)),
+    nnzo = nvar,
+    nnzj = nvar * ncon,
+    nnzh = nvar * (nvar + 1) / 2,
+    lin = Int[],
+    nln = 1:ncon,
+    nlin = length(lin),
+    nnln = length(nln),
+    minimize = true,
+    islp = false,
+    name = "Generic",
+  ) where {T, S}
+    if (nvar < 1) || (ncon < 0)
+      error("Nonsensical dimensions")
+    end
+
+    @lencheck nvar x0 lvar uvar
+    @lencheck ncon y0 lcon ucon
+    @lencheck nlin lin
+    @lencheck nnln nln
+    @rangecheck 1 ncon lin nln
+
+    ifix = findall(lvar .== uvar)
+    ilow = findall((lvar .> T(-Inf)) .& (uvar .== T(Inf)))
+    iupp = findall((lvar .== T(-Inf)) .& (uvar .< T(Inf)))
+    irng = findall((lvar .> T(-Inf)) .& (uvar .< T(Inf)) .& (lvar .< uvar))
+    ifree = findall((lvar .== T(-Inf)) .& (uvar .== T(Inf)))
+    iinf = findall(lvar .> uvar)
+
+    jfix = findall(lcon .== ucon)
+    jlow = findall((lcon .> T(-Inf)) .& (ucon .== T(Inf)))
+    jupp = findall((lcon .== T(-Inf)) .& (ucon .< T(Inf)))
+    jrng = findall((lcon .> T(-Inf)) .& (ucon .< T(Inf)) .& (lcon .< ucon))
+    jfree = findall((lcon .== T(-Inf)) .& (ucon .== T(Inf)))
+    jinf = findall(lcon .> ucon)
+
+    nnzj = max(0, nnzj)
+    nnzh = max(0, nnzh)
+
+    new{T, S}(
+      nvar,
+      x0,
+      lvar,
+      uvar,
+      ifix,
+      ilow,
+      iupp,
+      irng,
+      ifree,
+      iinf,
+      nlvb,
+      nlvo,
+      nlvc,
+      ncon,
+      y0,
+      lcon,
+      ucon,
+      jfix,
+      jlow,
+      jupp,
+      jrng,
+      jfree,
+      jinf,
+      nnzo,
+      nnzj,
+      nnzh,
+      nlin,
+      nnln,
+      lin,
+      nln,
+      minimize,
+      islp,
+      name,
+    )
+  end
+end
+NLPModels.equality_constrained(meta::SimpleNLPMeta) = length(meta.jfix) == meta.ncon > 0
+NLPModels.unconstrained(meta::SimpleNLPMeta) = meta.ncon == 0 && !has_bounds(meta)
+
+function SimpleNLPModel(::Type{T}, ::Type{NLPModelMeta}) where {T}
   meta = NLPModelMeta{T, Vector{T}}(
     2,
     nnzh = 2,
@@ -28,10 +160,23 @@ function SimpleNLPModel(::Type{T}) where {T}
     ucon = T[0; Inf],
     name = "Simple NLP Model",
   )
-
   return SimpleNLPModel(meta, Counters())
 end
-SimpleNLPModel() = SimpleNLPModel(Float64)
+function SimpleNLPModel(::Type{T}, ::Type{SimpleNLPMeta}) where {T}
+  meta = SimpleNLPMeta{T, Vector{T}}(
+    2,
+    nnzh = 2,
+    ncon = 2,
+    lvar = zeros(T, 2),
+    uvar = ones(T, 2),
+    x0 = T[2; 2],
+    lcon = T[0; 0],
+    ucon = T[0; Inf],
+    name = "Simple NLP Model",
+  )
+  return SimpleNLPModel(meta, Counters())
+end
+SimpleNLPModel() = SimpleNLPModel(Float64, NLPModelMeta)
 
 function NLPModels.obj(nlp::SimpleNLPModel, x::AbstractVector)
   @lencheck 2 x

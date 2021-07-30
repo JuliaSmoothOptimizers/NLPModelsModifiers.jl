@@ -1,5 +1,5 @@
 @testset "SlackModel NLP tests" begin
-  @testset "API" for T in [Float64, Float32]
+  @testset "API" for T in [Float64, Float32], M in [NLPModelMeta, SimpleNLPMeta]
     f(x) = (x[1] - 2)^2 + (x[2] - 1)^2
     ∇f(x) = T[2 * (x[1] - 2); 2 * (x[2] - 1); 0]
     H(x) = T[2.0 0 0; 0 2.0 0; 0 0 0]
@@ -7,7 +7,7 @@
     J(x) = T[1.0 -2.0 0; -0.5x[1] -2.0x[2] -1]
     H(x, y) = H(x) + y[2] * T[-0.5 0 0; 0 -2.0 0; 0 0 0]
 
-    nlp = SlackModel(SimpleNLPModel(T))
+    nlp = SlackModel(SimpleNLPModel(T, M))
     n = nlp.meta.nvar
     m = nlp.meta.ncon
 
