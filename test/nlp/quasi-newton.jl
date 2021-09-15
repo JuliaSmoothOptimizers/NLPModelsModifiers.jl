@@ -6,9 +6,9 @@
     J(x) = [1.0 -2.0; -0.5x[1] -2.0x[2]]
 
     for (QNM, QNO) in [(LSR1Model, LSR1Operator), (LBFGSModel, LBFGSOperator)],
-      T in [Float64, Float32]
+      T in [Float64, Float32], M in [NLPModelMeta, SimpleNLPMeta]
 
-      nlp = QNM(SimpleNLPModel(T))
+      nlp = QNM(SimpleNLPModel(T, M))
       n = nlp.meta.nvar
       m = nlp.meta.ncon
 

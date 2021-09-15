@@ -1,10 +1,10 @@
 @testset "FeasibilityResidual tests" begin
-  @testset "NLS API" for T in [Float64, Float32]
+  @testset "NLS API" for T in [Float64, Float32], M in [NLPModelMeta, SimpleNLPMeta]
     F(x) = T[x[1] - 2x[2] + 1; -x[1]^2 / 4 - x[2]^2 + 1 - x[3]]
     JF(x) = T[1.0 -2.0 0; -0.5x[1] -2.0x[2] -1]
     HF(x, w) = w[2] * diagm(0 => T[-0.5; -2.0; 0.0])
 
-    nls = FeasibilityResidual(SimpleNLPModel(T))
+    nls = FeasibilityResidual(SimpleNLPModel(T, M))
     n = nls.meta.nvar
     ne = nls_meta(nls).nequ
 
@@ -60,7 +60,7 @@
     @test grad(nls, x) ≈ JF(x)' * F(x) ≈ gx
   end
 
-  @testset "NLP API" for T in [Float64, Float32]
+  @testset "NLP API" for T in [Float64, Float32], M in [NLPModelMeta, SimpleNLPMeta]
     F(x) = T[x[1] - 2x[2] + 1; -x[1]^2 / 4 - x[2]^2 + 1 - x[3]]
     JF(x) = T[1.0 -2.0 0; -0.5x[1] -2.0x[2] -1]
     HF(x, w) = w[2] * diagm(0 => T[-0.5; -2.0; 0.0])
@@ -68,7 +68,7 @@
     ∇f(x) = JF(x)' * F(x)
     H(x) = JF(x)' * JF(x) + HF(x, F(x))
 
-    nls = FeasibilityResidual(SimpleNLPModel(T))
+    nls = FeasibilityResidual(SimpleNLPModel(T, M))
     n = nls.meta.nvar
 
     x = randn(T, n)
