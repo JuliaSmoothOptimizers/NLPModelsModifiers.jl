@@ -183,7 +183,9 @@
     @test strip.(split(chomp(showed), "\n")) == strip.(split(chomp(expected), "\n"))
   end
 
-  @testset "FeasibilityFormNLS of a FeasibilityResidual" for T in [Float64, Float32], M in [NLPModelMeta, SimpleNLPMeta]
+  @testset "FeasibilityFormNLS of a FeasibilityResidual" for T in [Float64, Float32],
+    M in [NLPModelMeta, SimpleNLPMeta]
+
     nlp = SimpleNLPModel(T, M)
     snlp = SlackModel(nlp)
     nls = FeasibilityResidual(nlp)

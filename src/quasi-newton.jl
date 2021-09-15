@@ -2,13 +2,15 @@ export QuasiNewtonModel, LBFGSModel, LSR1Model
 
 abstract type QuasiNewtonModel{T, S} <: AbstractNLPModel{T, S} end
 
-mutable struct LBFGSModel{T, S, M <: AbstractNLPModel{T, S}, Meta <: AbstractNLPModelMeta{T, S}} <: QuasiNewtonModel{T, S}
+mutable struct LBFGSModel{T, S, M <: AbstractNLPModel{T, S}, Meta <: AbstractNLPModelMeta{T, S}} <:
+               QuasiNewtonModel{T, S}
   meta::Meta
   model::M
   op::LBFGSOperator
 end
 
-mutable struct LSR1Model{T, S, M <: AbstractNLPModel{T, S}, Meta <: AbstractNLPModelMeta{T, S}} <: QuasiNewtonModel{T, S}
+mutable struct LSR1Model{T, S, M <: AbstractNLPModel{T, S}, Meta <: AbstractNLPModelMeta{T, S}} <:
+               QuasiNewtonModel{T, S}
   meta::Meta
   model::M
   op::LSR1Operator
