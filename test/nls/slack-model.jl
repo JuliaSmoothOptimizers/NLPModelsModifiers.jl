@@ -30,8 +30,6 @@
       w,
       Jtw,
     ) ≈ JF(x)' * w
-    @test jprod_residual!(nls, x, jac_structure_residual(nls)..., v, Jv) ≈ JF(x) * v
-    @test jtprod_residual!(nls, x, jac_structure_residual(nls)..., w, Jtw) ≈ JF(x)' * w
     Jop = jac_op_residual(nls, x)
     @test Jop * v ≈ JF(x) * v
     @test Jop' * w ≈ JF(x)' * w
@@ -49,9 +47,6 @@
     @test mul!(w, Jop, v, one(T), -one(T)) ≈ res
     res = JF(x)' * w - v
     @test mul!(v, Jop', w, one(T), -one(T)) ≈ res
-    Jop = jac_op_residual!(nls, x, jac_structure_residual(nls)..., Jv, Jtw)
-    @test Jop * v ≈ JF(x) * v
-    @test Jop' * w ≈ JF(x)' * w
     I, J, V = findnz(sparse(HF(x, w)))
     @test hess_structure_residual(nls) == (I, J)
     @test hess_coord_residual(nls, x, w) ≈ V
@@ -122,9 +117,7 @@
     @test fx ≈ f(x)
     @test gx ≈ ∇f(x)
     @test jprod!(nls, jac_structure(nls)..., jac_coord(nls, x), v, Jv) ≈ J(x) * v
-    @test jprod!(nls, x, jac_structure(nls)..., v, Jv) ≈ J(x) * v
     @test jtprod!(nls, jac_structure(nls)..., jac_coord(nls, x), w, Jtw) ≈ J(x)' * w
-    @test jtprod!(nls, x, jac_structure(nls)..., w, Jtw) ≈ J(x)' * w
     Jop = jac_op!(nls, x, Jv, Jtw)
     @test Jop * v ≈ J(x) * v
     @test Jop' * w ≈ J(x)' * w
@@ -133,9 +126,6 @@
     res = J(x)' * w - v
     @test mul!(v, Jop', w, one(T), -one(T)) ≈ res
     Jop = jac_op!(nls, jac_structure(nls)..., jac_coord(nls, x), Jv, Jtw)
-    @test Jop * v ≈ J(x) * v
-    @test Jop' * w ≈ J(x)' * w
-    Jop = jac_op!(nls, x, jac_structure(nls)..., Jv, Jtw)
     @test Jop * v ≈ J(x) * v
     @test Jop' * w ≈ J(x)' * w
     ghjv = zeros(T, m)
@@ -147,8 +137,6 @@
     @test ghjvprod(nls, x, gx, v) ≈ ghjv
     @test hess_coord!(nls, x, Hvals) == hess_coord!(nls, x, y * 0, Hvals)
     @test hprod!(nls, hess_structure(nls)..., hess_coord(nls, x), v, Hv) ≈ H(x) * v
-    @test hprod!(nls, x, hess_structure(nls)..., v, Hv) ≈ H(x) * v
-    @test hprod!(nls, x, y, hess_structure(nls)..., v, Hv) ≈ H(x, y) * v
     Hop = hess_op(nls, x)
     @test Hop * v ≈ H(x) * v
     z = ones(T, nls.meta.nvar)
@@ -161,15 +149,11 @@
     @test Hop * v ≈ H(x) * v
     res = H(x) * v - z
     @test mul!(z, Hop, v, one(T), -one(T)) ≈ res
-    Hop = hess_op!(nls, x, hess_structure(nls)..., Hv)
-    @test Hop * v ≈ H(x) * v
     Hop = hess_op(nls, x, y)
     @test Hop * v ≈ H(x, y) * v
     Hop = hess_op!(nls, x, y, Hv)
     @test Hop * v ≈ H(x, y) * v
     Hop = hess_op!(nls, hess_structure(nls)..., hess_coord(nls, x, y), Hv)
-    @test Hop * v ≈ H(x, y) * v
-    Hop = hess_op!(nls, x, y, hess_structure(nls)..., Hv)
     @test Hop * v ≈ H(x, y) * v
   end
 
