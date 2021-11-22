@@ -29,8 +29,6 @@
       w,
       Jtw,
     ) ≈ JF(x)' * w
-    @test jprod_residual!(nls, x, jac_structure_residual(nls)..., v, Jv) ≈ JF(x) * v
-    @test jtprod_residual!(nls, x, jac_structure_residual(nls)..., w, Jtw) ≈ JF(x)' * w
     Jop = jac_op_residual(nls, x)
     @test Jop * v ≈ JF(x) * v
     @test Jop' * w ≈ JF(x)' * w
@@ -38,9 +36,6 @@
     @test Jop * v ≈ JF(x) * v
     @test Jop' * w ≈ JF(x)' * w
     Jop = jac_op_residual!(nls, jac_structure_residual(nls)..., jac_coord_residual(nls, x), Jv, Jtw)
-    @test Jop * v ≈ JF(x) * v
-    @test Jop' * w ≈ JF(x)' * w
-    Jop = jac_op_residual!(nls, x, jac_structure_residual(nls)..., Jv, Jtw)
     @test Jop * v ≈ JF(x) * v
     @test Jop' * w ≈ JF(x)' * w
     I, J, V = findnz(sparse(HF(x, w)))
