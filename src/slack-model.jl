@@ -106,7 +106,6 @@ function slack_meta(meta::AbstractNLPModelMeta{T, S}; name = meta.name * "-slack
     nnzj = meta.nnzj + ns,
     nnzh = meta.nnzh,
     lin = meta.lin,
-    nln = meta.nln,
     name = name,
     minimize = meta.minimize,
   )
@@ -142,7 +141,6 @@ function SlackNLSModel(
     nnzj = model.nls_meta.nnzj,
     nnzh = model.nls_meta.nnzh,
     lin = model.nls_meta.lin,
-    nln = model.nls_meta.nln,
   )
 
   snls = SlackNLSModel(meta, nls_meta, model)

@@ -27,7 +27,6 @@ function FeasibilityFormNLS(
     ucon = meta.ucon,
     y0 = meta.y0,
     lin = meta.lin,
-    nln = meta.nln,
     nnzj = nnzj,
     nnzh = nnzh,
     name = name,

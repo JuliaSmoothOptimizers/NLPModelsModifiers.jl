@@ -69,7 +69,6 @@ function FeasibilityResidual(
     nnzj = nlp.meta.nnzj,
     nnzh = nlp.meta.nnzh,
     lin = nlp.meta.lin,
-    nln = nlp.meta.nln,
   )
   nls = FeasibilityResidual(meta, nls_meta, NLSCounters(), nlp)
   finalizer(nls -> finalize(nls.nlp), nls)
