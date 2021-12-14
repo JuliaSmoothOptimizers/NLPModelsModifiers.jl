@@ -76,12 +76,11 @@ function FeasibilityFormNLS(
     ucon = ucon,
     y0 = y0,
     lin = [nls.nls_meta.lin; meta.lin .+ nequ],
-    nln = [nls.nls_meta.nln; meta.nln .+ nequ],
     nnzj = meta.nnzj + nls.nls_meta.nnzj + nequ,
     nnzh = nnzh,
     name = name,
   )
-  nls_meta = NLSMeta{T, S}(nequ, nvar, x0 = x0, nnzj = nequ, nnzh = 0, lin = 1:nequ, nln = Int[])
+  nls_meta = NLSMeta{T, S}(nequ, nvar, x0 = x0, nnzj = nequ, nnzh = 0, lin = 1:nequ)
 
   nlp = FeasibilityFormNLS{T, S, typeof(nls)}(meta, nls_meta, nls, NLSCounters())
   finalizer(nlp -> finalize(nlp.internal), nlp)
