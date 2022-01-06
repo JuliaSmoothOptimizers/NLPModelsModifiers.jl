@@ -8,7 +8,10 @@ using FastClosures
 using LinearOperators, NLPModels
 
 macro notimplemented_use_nls(fun)
-    :(error($fun, " is not implemented for models of type FeasibilityResidual. Try converting the FeasibilityResidual model as a FeasbilityFormNLS."))
+  :(error(
+    $fun,
+    " is not implemented for models of type FeasibilityResidual. Try converting the FeasibilityResidual model as a FeasbilityFormNLS.",
+  ))
 end
 
 include("feasibility-form-nls.jl")
