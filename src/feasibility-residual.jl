@@ -195,3 +195,20 @@ function NLPModels.hprod!(
   Hv .*= obj_weight
   return Hv
 end
+
+function NLPModels.hess_structure!(
+  ::FeasibilityResidual,
+  ::AbstractVector,
+  ::AbstractVector,
+)
+  @notimplemented_use_nls hess_structure
+end
+
+function NLPModels.hess_coord!(
+  ::FeasibilityResidual,
+  ::AbstractVector{T},
+  ::AbstractVector;
+  kwargs...
+) where T
+  @notimplemented_use_nls hess_coord
+end

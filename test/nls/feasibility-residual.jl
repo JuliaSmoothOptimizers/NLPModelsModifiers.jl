@@ -53,6 +53,9 @@
     fx, gx = objgrad!(nls, x, v)
     @test obj(nls, x) ≈ norm(F(x))^2 / 2 ≈ fx
     @test grad(nls, x) ≈ JF(x)' * F(x) ≈ gx
+
+    @test_throws ErrorException hess_structure(nls)
+    @test_throws ErrorException hess_coord(nls, nls.meta.x0)
   end
 
   @testset "NLP API" for T in [Float64, Float32], M in [NLPModelMeta, SimpleNLPMeta]
