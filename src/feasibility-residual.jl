@@ -196,11 +196,7 @@ function NLPModels.hprod!(
   return Hv
 end
 
-function NLPModels.hess_structure!(
-  ::FeasibilityResidual,
-  ::AbstractVector,
-  ::AbstractVector,
-)
+function NLPModels.hess_structure!(::FeasibilityResidual, ::AbstractVector, ::AbstractVector)
   @notimplemented_use_nls hess_structure
 end
 
@@ -208,7 +204,7 @@ function NLPModels.hess_coord!(
   ::FeasibilityResidual,
   ::AbstractVector{T},
   ::AbstractVector;
-  kwargs...
-) where T
+  kwargs...,
+) where {T}
   @notimplemented_use_nls hess_coord
 end
