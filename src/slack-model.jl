@@ -394,7 +394,7 @@ function NLPModels.jth_hess_coord!(
   nlp::SlackModels,
   x::AbstractVector,
   j::Integer,
-  vals::AbstractVector
+  vals::AbstractVector,
 )
   @lencheck nlp.meta.nvar x
   @rangecheck 1 nlp.meta.ncon j
@@ -408,7 +408,7 @@ function NLPModels.jth_hprod!(
   x::AbstractVector,
   v::AbstractVector,
   j::Integer,
-  hv::AbstractVector
+  hv::AbstractVector,
 )
   @lencheck nlp.meta.nvar x v hv
   @rangecheck 1 nlp.meta.ncon j

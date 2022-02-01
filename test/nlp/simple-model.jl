@@ -303,7 +303,7 @@ function NLPModels.jth_hess_coord!(
   nlp::SimpleNLPModel,
   x::AbstractVector,
   j::Integer,
-  vals::AbstractVector{T}
+  vals::AbstractVector{T},
 ) where {T}
   @lencheck 2 x
   @rangecheck 1 2 j
@@ -312,7 +312,7 @@ function NLPModels.jth_hess_coord!(
     vals .= zero(T)
   else
     vals[1] = -T(1 / 2)
-    vals[2] = -T(2) 
+    vals[2] = -T(2)
   end
   return vals
 end
@@ -322,7 +322,7 @@ function NLPModels.jth_hprod!(
   x::AbstractVector,
   v::AbstractVector,
   j::Integer,
-  hv::AbstractVector{T}
+  hv::AbstractVector{T},
 ) where {T}
   @lencheck 2 x v hv
   @rangecheck 1 2 j
