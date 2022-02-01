@@ -390,6 +390,34 @@ function NLPModels.ghjvprod!(
   return ghjvprod!(nlp.model, view(x, 1:n), view(g, 1:n), view(v, 1:n), gHv)
 end
 
+function NLPModels.jth_hess_coord!(
+  nlp::SlackModels,
+  x::AbstractVector,
+  j::Integer,
+  vals::AbstractVector
+)
+  @lencheck nlp.meta.nvar x
+  @rangecheck 1 nlp.meta.ncon j
+  @lencheck nlp.meta.nnzh vals
+  n = nlp.model.meta.nvar
+  return jth_hess_coord!(nlp.model, view(x, 1:n), j, vals)
+end
+
+function NLPModels.jth_hprod!(
+  nlp::SlackModels,
+  x::AbstractVector,
+  v::AbstractVector,
+  j::Integer,
+  hv::AbstractVector
+)
+  @lencheck nlp.meta.nvar x v hv
+  @rangecheck 1 nlp.meta.ncon j
+  n = nlp.model.meta.nvar
+  @views jth_hprod!(nlp.model, x[1:n], v[1:n], j, hv[1:n])
+  hv[(n + 1):(nlp.meta.nvar)] .= 0
+  return hv
+end
+
 function NLPModels.residual!(nls::SlackNLSModel, x::AbstractVector, Fx::AbstractVector)
   @lencheck nls.meta.nvar x
   @lencheck nls.nls_meta.nequ Fx

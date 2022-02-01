@@ -66,6 +66,8 @@
       eⱼ = [i == j ? one(T) : zero(T) for i = 1:m]
       Cⱼ(x) = H(x, eⱼ) - H(x)
       ghjv[j] = dot(gx, Cⱼ(x) * v)
+      @test jth_hess(nlp, x, j) == Cⱼ(x)
+      @test jth_hprod(nlp, x, v, j) == Cⱼ(x) * v
     end
     @test ghjvprod(nlp, x, gx, v) ≈ ghjv
     @test hess_coord!(nlp, x, Hvals) == hess_coord!(nlp, x, y * 0, Hvals)

@@ -298,3 +298,39 @@ function NLPModels.ghjvprod!(
   gHv .= [T(0); -g[1] * v[1] / 2 - 2 * g[2] * v[2]]
   return gHv
 end
+
+function NLPModels.jth_hess_coord!(
+  nlp::SimpleNLPModel,
+  x::AbstractVector,
+  j::Integer,
+  vals::AbstractVector{T}
+) where {T}
+  @lencheck 2 x
+  @rangecheck 1 2 j
+  @lencheck 2 vals
+  if j == 1
+    vals .= zero(T)
+  else
+    vals[1] = -T(1 / 2)
+    vals[2] = -T(2) 
+  end
+  return vals
+end
+
+function NLPModels.jth_hprod!(
+  nlp::SimpleNLPModel,
+  x::AbstractVector,
+  v::AbstractVector,
+  j::Integer,
+  hv::AbstractVector{T}
+) where {T}
+  @lencheck 2 x v hv
+  @rangecheck 1 2 j
+  if j == 1
+    hv .= zero(T)
+  else
+    hv[1] = -v[1] / 2
+    hv[2] = -2 * v[2]
+  end
+  return hv
+end
