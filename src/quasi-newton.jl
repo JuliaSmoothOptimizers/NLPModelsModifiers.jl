@@ -45,14 +45,14 @@ function NLPModels.reset_data!(nlp::QuasiNewtonModel)
 end
 
 # the following methods are not affected by the Hessian approximation
-for meth in (:obj, :grad, :cons, :jac_coord, :jac)
+for meth in (:obj, :grad, :cons, :cons_lin, :cons_nln, :jac_coord, :jac_lin_coord, :jac_nln_coord, :jac, :jac_lin, :jac_nln)
   @eval NLPModels.$meth(nlp::QuasiNewtonModel, x::AbstractVector) = $meth(nlp.model, x)
 end
-for meth in (:grad!, :cons!, :jprod, :jtprod, :objgrad, :objgrad!, :jac_coord!)
+for meth in (:grad!, :cons!, :cons_lin!, :cons_nln!, :jprod, :jprod_lin, :jprod_nln, :jtprod, :jtprod_lin, :jtprod_lin, :objgrad, :objgrad!, :jac_coord!, :jac_lin_coord!, :jac_nln_coord!)
   @eval NLPModels.$meth(nlp::QuasiNewtonModel, x::AbstractVector, y::AbstractVector) =
     $meth(nlp.model, x, y)
 end
-for meth in (:jprod!, :jtprod!)
+for meth in (:jprod!, :jprod_lin!, :jprod_nln!, :jtprod!, :jtprod_lin!, :jtprod_nln!)
   @eval NLPModels.$meth(
     nlp::QuasiNewtonModel,
     x::AbstractVector,
@@ -65,6 +65,16 @@ NLPModels.jac_structure!(
   rows::AbstractVector{<:Integer},
   cols::AbstractVector{<:Integer},
 ) = jac_structure!(nlp.model, rows, cols)
+NLPModels.jac_lin_structure!(
+  nlp::QuasiNewtonModel,
+  rows::AbstractVector{<:Integer},
+  cols::AbstractVector{<:Integer},
+) = jac_lin_structure!(nlp.model, rows, cols)
+NLPModels.jac_nln_structure!(
+  nlp::QuasiNewtonModel,
+  rows::AbstractVector{<:Integer},
+  cols::AbstractVector{<:Integer},
+) = jac_nln_structure!(nlp.model, rows, cols)
 
 # the following methods are affected by the Hessian approximation
 NLPModels.hess_op(nlp::QuasiNewtonModel, x::AbstractVector; kwargs...) = nlp.op
