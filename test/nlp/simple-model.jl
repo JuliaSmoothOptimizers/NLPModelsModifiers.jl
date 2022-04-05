@@ -47,6 +47,8 @@ mutable struct SimpleNLPMeta{T, S} <: AbstractNLPModelMeta{T, S}
 
   nnzo::Int
   nnzj::Int
+  lin_nnzj::Int
+  nln_nnzj::Int
   nnzh::Int
 
   nlin::Int
@@ -72,11 +74,10 @@ mutable struct SimpleNLPMeta{T, S} <: AbstractNLPModelMeta{T, S}
     ucon::S = fill!(S(undef, ncon), T(Inf)),
     nnzo = nvar,
     nnzj = nvar * ncon,
+    lin_nnzj = 0,
+    nln_nnzj = nvar * ncon,
     nnzh = nvar * (nvar + 1) / 2,
     lin = Int[],
-    nln = 1:ncon,
-    nlin = length(lin),
-    nnln = length(nln),
     minimize = true,
     islp = false,
     name = "Generic",
@@ -87,9 +88,7 @@ mutable struct SimpleNLPMeta{T, S} <: AbstractNLPModelMeta{T, S}
 
     @lencheck nvar x0 lvar uvar
     @lencheck ncon y0 lcon ucon
-    @lencheck nlin lin
-    @lencheck nnln nln
-    @rangecheck 1 ncon lin nln
+    @rangecheck 1 ncon lin
 
     ifix = findall(lvar .== uvar)
     ilow = findall((lvar .> T(-Inf)) .& (uvar .== T(Inf)))
@@ -107,6 +106,10 @@ mutable struct SimpleNLPMeta{T, S} <: AbstractNLPModelMeta{T, S}
 
     nnzj = max(0, nnzj)
     nnzh = max(0, nnzh)
+
+    nln = setdiff(1:ncon, lin)
+    nlin = length(lin)
+    nnln = length(nln)
 
     new{T, S}(
       nvar,
@@ -134,6 +137,8 @@ mutable struct SimpleNLPMeta{T, S} <: AbstractNLPModelMeta{T, S}
       jinf,
       nnzo,
       nnzj,
+      lin_nnzj,
+      nln_nnzj,
       nnzh,
       nlin,
       nnln,
@@ -159,6 +164,9 @@ function SimpleNLPModel(::Type{T}, ::Type{NLPModelMeta}) where {T}
     lcon = T[0; 0],
     ucon = T[0; Inf],
     name = "Simple NLP Model",
+    lin_nnzj = 2,
+    nln_nnzj = 2,
+    lin = [1],
   )
   return SimpleNLPModel(meta, Counters())
 end
@@ -173,6 +181,9 @@ function SimpleNLPModel(::Type{T}, ::Type{SimpleNLPMeta}) where {T}
     lcon = T[0; 0],
     ucon = T[0; Inf],
     name = "Simple NLP Model",
+    lin_nnzj = 2,
+    nln_nnzj = 2,
+    lin = [1],
   )
   return SimpleNLPModel(meta, Counters())
 end
@@ -242,6 +253,22 @@ function NLPModels.cons!(nlp::SimpleNLPModel, x::AbstractVector, cx::AbstractVec
   return cx
 end
 
+function NLPModels.cons_lin!(nlp::SimpleNLPModel, x::AbstractVector, cx::AbstractVector)
+  @lencheck 2 x
+  @lencheck 1 cx
+  increment!(nlp, :neval_cons)
+  cx .= [x[1] - 2 * x[2] + 1]
+  return cx
+end
+
+function NLPModels.cons_nln!(nlp::SimpleNLPModel, x::AbstractVector, cx::AbstractVector)
+  @lencheck 2 x
+  @lencheck 1 cx
+  increment!(nlp, :neval_cons)
+  cx .= [-x[1]^2 / 4 - x[2]^2 + 1]
+  return cx
+end
+
 function NLPModels.jac_structure!(
   nlp::SimpleNLPModel,
   rows::AbstractVector{Int},
@@ -253,11 +280,49 @@ function NLPModels.jac_structure!(
   return rows, cols
 end
 
+function NLPModels.jac_lin_structure!(
+  nlp::SimpleNLPModel,
+  rows::AbstractVector{Int},
+  cols::AbstractVector{Int},
+)
+  @lencheck 2 rows cols
+  rows .= [1, 1]
+  cols .= [1, 2]
+  return rows, cols
+end
+
+function NLPModels.jac_nln_structure!(
+  nlp::SimpleNLPModel,
+  rows::AbstractVector{Int},
+  cols::AbstractVector{Int},
+)
+  @lencheck 2 rows cols
+  rows .= [1, 1]
+  cols .= [1, 2]
+  return rows, cols
+end
+
 function NLPModels.jac_coord!(nlp::SimpleNLPModel, x::AbstractVector, vals::AbstractVector)
   @lencheck 2 x
   @lencheck 4 vals
   increment!(nlp, :neval_jac)
   vals .= [1, -x[1] / 2, -2, -2 * x[2]]
+  return vals
+end
+
+function NLPModels.jac_lin_coord!(nlp::SimpleNLPModel, x::AbstractVector, vals::AbstractVector)
+  @lencheck 2 x
+  @lencheck 2 vals
+  increment!(nlp, :neval_jac)
+  vals .= [1, -2]
+  return vals
+end
+
+function NLPModels.jac_nln_coord!(nlp::SimpleNLPModel, x::AbstractVector, vals::AbstractVector)
+  @lencheck 2 x
+  @lencheck 2 vals
+  increment!(nlp, :neval_jac)
+  vals .= [-x[1] / 2, -2 * x[2]]
   return vals
 end
 
@@ -273,6 +338,32 @@ function NLPModels.jprod!(
   return Jv
 end
 
+function NLPModels.jprod_lin!(
+  nlp::SimpleNLPModel,
+  x::AbstractVector,
+  v::AbstractVector,
+  Jv::AbstractVector,
+)
+  @lencheck 2 x v
+  @lencheck 1 Jv
+  increment!(nlp, :neval_jprod)
+  Jv .= [v[1] - 2 * v[2]]
+  return Jv
+end
+
+function NLPModels.jprod_nln!(
+  nlp::SimpleNLPModel,
+  x::AbstractVector,
+  v::AbstractVector,
+  Jv::AbstractVector,
+)
+  @lencheck 2 x v
+  @lencheck 1 Jv
+  increment!(nlp, :neval_jprod)
+  Jv .= [-x[1] * v[1] / 2 - 2 * x[2] * v[2]]
+  return Jv
+end
+
 function NLPModels.jtprod!(
   nlp::SimpleNLPModel,
   x::AbstractVector,
@@ -282,6 +373,32 @@ function NLPModels.jtprod!(
   @lencheck 2 x v Jtv
   increment!(nlp, :neval_jtprod)
   Jtv .= [v[1] - x[1] * v[2] / 2; -2 * v[1] - 2 * x[2] * v[2]]
+  return Jtv
+end
+
+function NLPModels.jtprod_lin!(
+  nlp::SimpleNLPModel,
+  x::AbstractVector,
+  v::AbstractVector,
+  Jtv::AbstractVector,
+)
+  @lencheck 2 x Jtv
+  @lencheck 1 v
+  increment!(nlp, :neval_jtprod)
+  Jtv .= [v[1]; -2 * v[1]]
+  return Jtv
+end
+
+function NLPModels.jtprod_nln!(
+  nlp::SimpleNLPModel,
+  x::AbstractVector,
+  v::AbstractVector,
+  Jtv::AbstractVector,
+)
+  @lencheck 2 x Jtv
+  @lencheck 1 v
+  increment!(nlp, :neval_jtprod)
+  Jtv .= [- x[1] * v[1] / 2; - 2 * x[2] * v[1]]
   return Jtv
 end
 

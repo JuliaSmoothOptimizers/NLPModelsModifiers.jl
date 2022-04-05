@@ -3,7 +3,11 @@
     f(x) = (x[1] - 2)^2 + (x[2] - 1)^2
     ∇f(x) = [2 * (x[1] - 2); 2 * (x[2] - 1)]
     c(x) = [x[1] - 2x[2] + 1; -x[1]^2 / 4 - x[2]^2 + 1]
+    clin(x) = [x[1] - 2x[2] + 1]
+    cnln(x) = [-x[1]^2 / 4 - x[2]^2 + 1]
     J(x) = [1.0 -2.0; -0.5x[1] -2.0x[2]]
+    Jlin(x) = [1.0 -2.0]
+    Jnln(x) = [-0.5x[1] -2.0x[2]]
 
     for (QNM, QNO) in [(LSR1Model, LSR1Operator), (LBFGSModel, LBFGSOperator)],
       T in [Float64, Float32],
@@ -37,6 +41,18 @@
       @test jac(nlp, x) ≈ J(x)
       @test jprod(nlp, x, v) ≈ J(x) * v
       @test jtprod(nlp, x, w) ≈ J(x)' * w
+      if nlp.meta.lin_nnzj > 0
+        @test cons_lin(nlp, x) ≈ clin(x)
+        @test jac_lin(nlp, x) ≈ Jlin(x)
+        @test jprod_lin(nlp, x, v) ≈ Jlin(x) * v
+        @test jtprod_lin(nlp, x, w[nlp.meta.lin]) ≈ Jlin(x)' * w[nlp.meta.lin]
+      end
+      if nlp.meta.nln_nnzj > 0
+        @test cons_nln(nlp, x) ≈ cnln(x)
+        @test jac_nln(nlp, x) ≈ Jnln(x)
+        @test jprod_nln(nlp, x, v) ≈ Jnln(x) * v
+        @test jtprod_nln(nlp, x, w[nlp.meta.nln]) ≈ Jnln(x)' * w[nlp.meta.nln]
+      end
 
       # Increasing coverage
       fx, cx = objcons(nlp, x)
@@ -53,12 +69,28 @@
       @test gx ≈ ∇f(x)
       @test jprod!(nlp, jac_structure(nlp)..., jac_coord(nlp, x), v, Jv) ≈ J(x) * v
       @test jtprod!(nlp, jac_structure(nlp)..., jac_coord(nlp, x), w, Jtw) ≈ J(x)' * w
+      @test jprod_lin!(nlp, jac_lin_structure(nlp)..., jac_lin_coord(nlp, x), v, Jv[nlp.meta.lin]) ≈ Jlin(x) * v
+      @test jtprod_lin!(nlp, jac_lin_structure(nlp)..., jac_lin_coord(nlp, x), w[nlp.meta.lin], Jtw) ≈ Jlin(x)' * w[nlp.meta.lin]
+      @test jprod_nln!(nlp, jac_nln_structure(nlp)..., jac_nln_coord(nlp, x), v, Jv[nlp.meta.nln]) ≈ Jnln(x) * v
+      @test jtprod_nln!(nlp, jac_nln_structure(nlp)..., jac_nln_coord(nlp, x), w[nlp.meta.nln], Jtw) ≈ Jnln(x)' * w[nlp.meta.nln]
       Jop = jac_op!(nlp, x, Jv, Jtw)
       @test Jop * v ≈ J(x) * v
       @test Jop' * w ≈ J(x)' * w
       Jop = jac_op!(nlp, jac_structure(nlp)..., jac_coord(nlp, x), Jv, Jtw)
       @test Jop * v ≈ J(x) * v
       @test Jop' * w ≈ J(x)' * w
+      Jop = jac_lin_op!(nlp, x, Jv[nlp.meta.lin], Jtw)
+      @test Jop * v ≈ Jlin(x) * v
+      @test Jop' * w[nlp.meta.lin] ≈ Jlin(x)' * w[nlp.meta.lin]
+      Jop = jac_lin_op!(nlp, jac_lin_structure(nlp)..., jac_lin_coord(nlp, x), Jv[nlp.meta.lin], Jtw)
+      @test Jop * v ≈ Jlin(x) * v
+      @test Jop' * w[nlp.meta.lin] ≈ Jlin(x)' * w[nlp.meta.lin]
+      Jop = jac_nln_op!(nlp, x, Jv[nlp.meta.nln], Jtw)
+      @test Jop * v ≈ Jnln(x) * v
+      @test Jop' * w[nlp.meta.nln] ≈ Jnln(x)' * w[nlp.meta.nln]
+      Jop = jac_nln_op!(nlp, jac_nln_structure(nlp)..., jac_nln_coord(nlp, x), Jv[nlp.meta.nln], Jtw)
+      @test Jop * v ≈ Jnln(x) * v
+      @test Jop' * w[nlp.meta.nln] ≈ Jnln(x)' * w[nlp.meta.nln]
       Hop = hess_op(nlp, x)
       @test Hop * v ≈ H(x) * v
       Hop = hess_op!(nlp, x, Hv)
@@ -85,8 +117,8 @@
            low/upp: ████████████████████ 2              low/upp: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0
              fixed: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0                fixed: ██████████⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 1
             infeas: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0               infeas: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0
-              nnzh: ( 33.33% sparsity)   2               linear: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0
-                                                      nonlinear: ████████████████████ 2
+              nnzh: ( 33.33% sparsity)   2               linear: ██████████⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 1
+                                                      nonlinear: ██████████⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 1
                                                            nnzj: (  0.00% sparsity)   4
 
     Counters:
@@ -114,8 +146,8 @@
            low/upp: ████████████████████ 2              low/upp: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0
              fixed: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0                fixed: ██████████⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 1
             infeas: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0               infeas: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0
-              nnzh: ( 33.33% sparsity)   2               linear: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0
-                                                      nonlinear: ████████████████████ 2
+              nnzh: ( 33.33% sparsity)   2               linear: ██████████⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 1
+                                                      nonlinear: ██████████⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 1
                                                            nnzj: (  0.00% sparsity)   4
 
     Counters:
