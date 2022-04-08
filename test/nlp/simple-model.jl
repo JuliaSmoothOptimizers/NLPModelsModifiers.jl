@@ -246,13 +246,6 @@ function NLPModels.hprod!(
   return Hv
 end
 
-function NLPModels.cons!(nlp::SimpleNLPModel, x::AbstractVector, cx::AbstractVector)
-  @lencheck 2 x cx
-  increment!(nlp, :neval_cons)
-  cx .= [x[1] - 2 * x[2] + 1; -x[1]^2 / 4 - x[2]^2 + 1]
-  return cx
-end
-
 function NLPModels.cons_lin!(nlp::SimpleNLPModel, x::AbstractVector, cx::AbstractVector)
   @lencheck 2 x
   @lencheck 1 cx
@@ -267,17 +260,6 @@ function NLPModels.cons_nln!(nlp::SimpleNLPModel, x::AbstractVector, cx::Abstrac
   increment!(nlp, :neval_cons)
   cx .= [-x[1]^2 / 4 - x[2]^2 + 1]
   return cx
-end
-
-function NLPModels.jac_structure!(
-  nlp::SimpleNLPModel,
-  rows::AbstractVector{Int},
-  cols::AbstractVector{Int},
-)
-  @lencheck 4 rows cols
-  rows .= [1, 2, 1, 2]
-  cols .= [1, 1, 2, 2]
-  return rows, cols
 end
 
 function NLPModels.jac_lin_structure!(
@@ -302,14 +284,6 @@ function NLPModels.jac_nln_structure!(
   return rows, cols
 end
 
-function NLPModels.jac_coord!(nlp::SimpleNLPModel, x::AbstractVector, vals::AbstractVector)
-  @lencheck 2 x
-  @lencheck 4 vals
-  increment!(nlp, :neval_jac)
-  vals .= [1, -x[1] / 2, -2, -2 * x[2]]
-  return vals
-end
-
 function NLPModels.jac_lin_coord!(nlp::SimpleNLPModel, x::AbstractVector, vals::AbstractVector)
   @lencheck 2 x
   @lencheck 2 vals
@@ -324,18 +298,6 @@ function NLPModels.jac_nln_coord!(nlp::SimpleNLPModel, x::AbstractVector, vals::
   increment!(nlp, :neval_jac)
   vals .= [-x[1] / 2, -2 * x[2]]
   return vals
-end
-
-function NLPModels.jprod!(
-  nlp::SimpleNLPModel,
-  x::AbstractVector,
-  v::AbstractVector,
-  Jv::AbstractVector,
-)
-  @lencheck 2 x v Jv
-  increment!(nlp, :neval_jprod)
-  Jv .= [v[1] - 2 * v[2]; -x[1] * v[1] / 2 - 2 * x[2] * v[2]]
-  return Jv
 end
 
 function NLPModels.jprod_lin!(
@@ -362,18 +324,6 @@ function NLPModels.jprod_nln!(
   increment!(nlp, :neval_jprod)
   Jv .= [-x[1] * v[1] / 2 - 2 * x[2] * v[2]]
   return Jv
-end
-
-function NLPModels.jtprod!(
-  nlp::SimpleNLPModel,
-  x::AbstractVector,
-  v::AbstractVector,
-  Jtv::AbstractVector,
-)
-  @lencheck 2 x v Jtv
-  increment!(nlp, :neval_jtprod)
-  Jtv .= [v[1] - x[1] * v[2] / 2; -2 * v[1] - 2 * x[2] * v[2]]
-  return Jtv
 end
 
 function NLPModels.jtprod_lin!(
