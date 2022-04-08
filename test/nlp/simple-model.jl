@@ -348,7 +348,7 @@ function NLPModels.jtprod_nln!(
   @lencheck 2 x Jtv
   @lencheck 1 v
   increment!(nlp, :neval_jtprod)
-  Jtv .= [- x[1] * v[1] / 2; - 2 * x[2] * v[1]]
+  Jtv .= [-x[1] * v[1] / 2; -2 * x[2] * v[1]]
   return Jtv
 end
 
