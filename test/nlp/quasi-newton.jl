@@ -69,10 +69,24 @@
       @test gx ≈ ∇f(x)
       @test jprod!(nlp, jac_structure(nlp)..., jac_coord(nlp, x), v, Jv) ≈ J(x) * v
       @test jtprod!(nlp, jac_structure(nlp)..., jac_coord(nlp, x), w, Jtw) ≈ J(x)' * w
-      @test jprod_lin!(nlp, jac_lin_structure(nlp)..., jac_lin_coord(nlp, x), v, Jv[nlp.meta.lin]) ≈ Jlin(x) * v
-      @test jtprod_lin!(nlp, jac_lin_structure(nlp)..., jac_lin_coord(nlp, x), w[nlp.meta.lin], Jtw) ≈ Jlin(x)' * w[nlp.meta.lin]
-      @test jprod_nln!(nlp, jac_nln_structure(nlp)..., jac_nln_coord(nlp, x), v, Jv[nlp.meta.nln]) ≈ Jnln(x) * v
-      @test jtprod_nln!(nlp, jac_nln_structure(nlp)..., jac_nln_coord(nlp, x), w[nlp.meta.nln], Jtw) ≈ Jnln(x)' * w[nlp.meta.nln]
+      @test jprod_lin!(nlp, jac_lin_structure(nlp)..., jac_lin_coord(nlp, x), v, Jv[nlp.meta.lin]) ≈
+            Jlin(x) * v
+      @test jtprod_lin!(
+        nlp,
+        jac_lin_structure(nlp)...,
+        jac_lin_coord(nlp, x),
+        w[nlp.meta.lin],
+        Jtw,
+      ) ≈ Jlin(x)' * w[nlp.meta.lin]
+      @test jprod_nln!(nlp, jac_nln_structure(nlp)..., jac_nln_coord(nlp, x), v, Jv[nlp.meta.nln]) ≈
+            Jnln(x) * v
+      @test jtprod_nln!(
+        nlp,
+        jac_nln_structure(nlp)...,
+        jac_nln_coord(nlp, x),
+        w[nlp.meta.nln],
+        Jtw,
+      ) ≈ Jnln(x)' * w[nlp.meta.nln]
       Jop = jac_op!(nlp, x, Jv, Jtw)
       @test Jop * v ≈ J(x) * v
       @test Jop' * w ≈ J(x)' * w
@@ -82,13 +96,15 @@
       Jop = jac_lin_op!(nlp, x, Jv[nlp.meta.lin], Jtw)
       @test Jop * v ≈ Jlin(x) * v
       @test Jop' * w[nlp.meta.lin] ≈ Jlin(x)' * w[nlp.meta.lin]
-      Jop = jac_lin_op!(nlp, jac_lin_structure(nlp)..., jac_lin_coord(nlp, x), Jv[nlp.meta.lin], Jtw)
+      Jop =
+        jac_lin_op!(nlp, jac_lin_structure(nlp)..., jac_lin_coord(nlp, x), Jv[nlp.meta.lin], Jtw)
       @test Jop * v ≈ Jlin(x) * v
       @test Jop' * w[nlp.meta.lin] ≈ Jlin(x)' * w[nlp.meta.lin]
       Jop = jac_nln_op!(nlp, x, Jv[nlp.meta.nln], Jtw)
       @test Jop * v ≈ Jnln(x) * v
       @test Jop' * w[nlp.meta.nln] ≈ Jnln(x)' * w[nlp.meta.nln]
-      Jop = jac_nln_op!(nlp, jac_nln_structure(nlp)..., jac_nln_coord(nlp, x), Jv[nlp.meta.nln], Jtw)
+      Jop =
+        jac_nln_op!(nlp, jac_nln_structure(nlp)..., jac_nln_coord(nlp, x), Jv[nlp.meta.nln], Jtw)
       @test Jop * v ≈ Jnln(x) * v
       @test Jop' * w[nlp.meta.nln] ≈ Jnln(x)' * w[nlp.meta.nln]
       Hop = hess_op(nlp, x)

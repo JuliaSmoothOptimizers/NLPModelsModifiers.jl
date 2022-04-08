@@ -45,10 +45,38 @@ function NLPModels.reset_data!(nlp::QuasiNewtonModel)
 end
 
 # the following methods are not affected by the Hessian approximation
-for meth in (:obj, :grad, :cons, :cons_lin, :cons_nln, :jac_coord, :jac_lin_coord, :jac_nln_coord, :jac, :jac_lin, :jac_nln)
+for meth in (
+  :obj,
+  :grad,
+  :cons,
+  :cons_lin,
+  :cons_nln,
+  :jac_coord,
+  :jac_lin_coord,
+  :jac_nln_coord,
+  :jac,
+  :jac_lin,
+  :jac_nln,
+)
   @eval NLPModels.$meth(nlp::QuasiNewtonModel, x::AbstractVector) = $meth(nlp.model, x)
 end
-for meth in (:grad!, :cons!, :cons_lin!, :cons_nln!, :jprod, :jprod_lin, :jprod_nln, :jtprod, :jtprod_lin, :jtprod_lin, :objgrad, :objgrad!, :jac_coord!, :jac_lin_coord!, :jac_nln_coord!)
+for meth in (
+  :grad!,
+  :cons!,
+  :cons_lin!,
+  :cons_nln!,
+  :jprod,
+  :jprod_lin,
+  :jprod_nln,
+  :jtprod,
+  :jtprod_lin,
+  :jtprod_lin,
+  :objgrad,
+  :objgrad!,
+  :jac_coord!,
+  :jac_lin_coord!,
+  :jac_nln_coord!,
+)
   @eval NLPModels.$meth(nlp::QuasiNewtonModel, x::AbstractVector, y::AbstractVector) =
     $meth(nlp.model, x, y)
 end
