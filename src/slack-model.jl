@@ -106,6 +106,8 @@ function slack_meta(meta::AbstractNLPModelMeta{T, S}; name = meta.name * "-slack
     nnzj = meta.nnzj + ns,
     nnzh = meta.nnzh,
     lin = meta.lin,
+    lin_nnzj = meta.lin_nnzj + length(setdiff(meta.lin, meta.jfix)),
+    nln_nnzj = meta.nln_nnzj + length(setdiff(meta.nln, meta.jfix)),
     name = name,
     minimize = meta.minimize,
   )
@@ -157,6 +159,24 @@ const SlackModels = Union{SlackModel, SlackNLSModel}
 
 nls_meta(nlp::SlackNLSModel) = nlp.nls_meta
 
+get_slack_indices(jl, ind) = map(b -> findfirst(x -> x == b, ind), intersect(jl, ind))
+
+function get_slack_lin(nlp)
+  lin = setdiff(nlp.model.meta.lin, nlp.model.meta.jfix)
+  jlow = get_slack_indices(nlp.model.meta.jlow, lin)
+  jupp = get_slack_indices(nlp.model.meta.jupp, lin)
+  jrng = get_slack_indices(nlp.model.meta.jrng, lin)
+  return jlow, jupp, jrng
+end
+
+function get_slack_nln(nlp)
+  nln = setdiff(nlp.model.meta.nln, nlp.model.meta.jfix)
+  jlow = get_slack_indices(nlp.model.meta.jlow, nln)
+  jupp = get_slack_indices(nlp.model.meta.jupp, nln)
+  jrng = get_slack_indices(nlp.model.meta.jrng, nln)
+  return jlow, jupp, jrng
+end
+
 function NLPModels.obj(nlp::SlackModels, x::AbstractVector)
   @lencheck nlp.meta.nvar x
   # f(X) = f(x)
@@ -182,57 +202,113 @@ function NLPModels.objgrad!(nlp::SlackModels, x::AbstractVector, g::AbstractVect
   return f, g
 end
 
-function NLPModels.cons!(nlp::SlackModels, x::AbstractVector, c::AbstractVector)
+function NLPModels.cons_lin!(nlp::SlackModels, x::AbstractVector, c::AbstractVector)
   @lencheck nlp.meta.nvar x
-  @lencheck nlp.meta.ncon c
+  @lencheck nlp.meta.nlin c
   n = nlp.model.meta.nvar
   ns = nlp.meta.nvar - n
-  nlow = length(nlp.model.meta.jlow)
-  nupp = length(nlp.model.meta.jupp)
-  nrng = length(nlp.model.meta.jrng)
+  jlow, jupp, jrng = get_slack_lin(nlp)
+  nlow, nupp, nrng = length(jlow), length(jupp), length(jrng)
   @views begin
-    cons!(nlp.model, x[1:n], c)
-    c[nlp.model.meta.jlow] -= x[(n + 1):(n + nlow)]
-    c[nlp.model.meta.jupp] -= x[(n + nlow + 1):(n + nlow + nupp)]
-    c[nlp.model.meta.jrng] -= x[(n + nlow + nupp + 1):(n + nlow + nupp + nrng)]
+    cons_lin!(nlp.model, x[1:n], c)
+    I = n .+ jlow
+    c[jlow] -= x[I]
+    I = n .+ jupp
+    c[jupp] -= x[I]
+    I = n .+ jrng
+    c[jrng] -= x[I]
   end
   return c
 end
 
-function NLPModels.jac_structure!(
+function NLPModels.cons_nln!(nlp::SlackModels, x::AbstractVector, c::AbstractVector)
+  @lencheck nlp.meta.nvar x
+  @lencheck nlp.meta.nnln c
+  n = nlp.model.meta.nvar
+  ns = nlp.meta.nvar - n
+  jlow, jupp, jrng = get_slack_nln(nlp)
+  nlow, nupp, nrng = length(jlow), length(jupp), length(jrng)
+  @views begin
+    cons_nln!(nlp.model, x[1:n], c)
+    I = n .+ jlow
+    c[jlow] -= x[I]
+    I = n .+ jupp
+    c[jupp] -= x[I]
+    I = n .+ jrng
+    c[jrng] -= x[I]
+  end
+  return c
+end
+
+function NLPModels.jac_lin_structure!(
   nlp::SlackModels,
   rows::AbstractVector{<:Integer},
   cols::AbstractVector{<:Integer},
 )
-  @lencheck nlp.meta.nnzj rows cols
+  @lencheck nlp.meta.lin_nnzj rows cols
   n = nlp.model.meta.nvar
-  ns = nlp.meta.nvar - n
-  nnzj = nlp.model.meta.nnzj
-  @views jac_structure!(nlp.model, rows[1:nnzj], cols[1:nnzj])
-  jlow = nlp.model.meta.jlow
-  jupp = nlp.model.meta.jupp
-  jrng = nlp.model.meta.jrng
-  nj, lj = nnzj, length(jlow)
+  lin_nnzj = nlp.model.meta.lin_nnzj
+  if lin_nnzj > 0
+    @views jac_lin_structure!(nlp.model, rows[1:lin_nnzj], cols[1:lin_nnzj])
+  end
+  jlow, jupp, jrng = get_slack_lin(nlp)
+  nj, lj = lin_nnzj, length(jlow)
   rows[(nj + 1):(nj + lj)] .= jlow
   nj, lj = nj + lj, length(jupp)
   rows[(nj + 1):(nj + lj)] .= jupp
   nj, lj = nj + lj, length(jrng)
   rows[(nj + 1):(nj + lj)] .= jrng
-  cols[(nnzj + 1):end] .= (n + 1):(nlp.meta.nvar)
+  cols[(lin_nnzj + 1):end] .= (n + 1):(nlp.meta.nvar)
   return rows, cols
 end
 
-function NLPModels.jac_coord!(nlp::SlackModels, x::AbstractVector, vals::AbstractVector)
-  @lencheck nlp.meta.nvar x
-  @lencheck nlp.meta.nnzj vals
+function NLPModels.jac_nln_structure!(
+  nlp::SlackModels,
+  rows::AbstractVector{<:Integer},
+  cols::AbstractVector{<:Integer},
+)
+  @lencheck nlp.meta.nln_nnzj rows cols
   n = nlp.model.meta.nvar
-  nnzj = nlp.model.meta.nnzj
-  @views jac_coord!(nlp.model, x[1:n], vals[1:nnzj])
-  vals[(nnzj + 1):(nlp.meta.nnzj)] .= -1
+  nln_nnzj = nlp.model.meta.nln_nnzj
+  if nln_nnzj > 0
+    @views jac_nln_structure!(nlp.model, rows[1:nln_nnzj], cols[1:nln_nnzj])
+  end
+  jlow, jupp, jrng = get_slack_nln(nlp)
+  nj, lj = nln_nnzj, length(jlow)
+  rows[(nj + 1):(nj + lj)] .= jlow
+  nj, lj = nj + lj, length(jupp)
+  rows[(nj + 1):(nj + lj)] .= jupp
+  nj, lj = nj + lj, length(jrng)
+  rows[(nj + 1):(nj + lj)] .= jrng
+  cols[(nln_nnzj + 1):end] .= (n + 1):(nlp.meta.nvar)
+  return rows, cols
+end
+
+function NLPModels.jac_lin_coord!(nlp::SlackModels, x::AbstractVector, vals::AbstractVector)
+  @lencheck nlp.meta.nvar x
+  @lencheck nlp.meta.lin_nnzj vals
+  n = nlp.model.meta.nvar
+  lin_nnzj = nlp.model.meta.lin_nnzj
+  if lin_nnzj > 0
+    @views jac_lin_coord!(nlp.model, x[1:n], vals[1:lin_nnzj])
+  end
+  vals[(lin_nnzj + 1):(nlp.meta.lin_nnzj)] .= -1
   return vals
 end
 
-function NLPModels.jprod!(
+function NLPModels.jac_nln_coord!(nlp::SlackModels, x::AbstractVector, vals::AbstractVector)
+  @lencheck nlp.meta.nvar x
+  @lencheck nlp.meta.nln_nnzj vals
+  n = nlp.model.meta.nvar
+  nln_nnzj = nlp.model.meta.nln_nnzj
+  if nln_nnzj > 0
+    @views jac_nln_coord!(nlp.model, x[1:n], vals[1:nln_nnzj])
+  end
+  vals[(nln_nnzj + 1):(nlp.meta.nln_nnzj)] .= -1
+  return vals
+end
+
+function NLPModels.jprod_lin!(
   nlp::SlackModels,
   x::AbstractVector,
   v::AbstractVector,
@@ -241,46 +317,100 @@ function NLPModels.jprod!(
   # J(X) V = [J(x)  -I] [vₓ] = J(x) vₓ - vₛ
   #                     [vₛ]
   @lencheck nlp.meta.nvar x v
-  @lencheck nlp.meta.ncon jv
+  @lencheck nlp.meta.nlin jv
   n = nlp.model.meta.nvar
   ns = nlp.meta.nvar - n
-  @views jprod!(nlp.model, x[1:n], v[1:n], jv)
+  @views jprod_lin!(nlp.model, x[1:n], v[1:n], jv)
   k = 1
   # use 3 loops to avoid forming [jlow ; jupp ; jrng]
-  for j in nlp.model.meta.jlow
+  jlow, jupp, jrng = get_slack_lin(nlp)
+  for j in jlow
     jv[j] -= v[n + k]
     k += 1
   end
-  for j in nlp.model.meta.jupp
+  for j in jupp
     jv[j] -= v[n + k]
     k += 1
   end
-  for j in nlp.model.meta.jrng
+  for j in jrng
     jv[j] -= v[n + k]
     k += 1
   end
   return jv
 end
 
-function NLPModels.jtprod!(
+function NLPModels.jprod_nln!(
   nlp::SlackModels,
   x::AbstractVector,
   v::AbstractVector,
-  jtv::AbstractVector,
+  jv::AbstractVector,
 )
+  # J(X) V = [J(x)  -I] [vₓ] = J(x) vₓ - vₛ
+  #                     [vₛ]
+  @lencheck nlp.meta.nvar x v
+  @lencheck nlp.meta.nnln jv
+  n = nlp.model.meta.nvar
+  ns = nlp.meta.nvar - n
+  @views jprod_nln!(nlp.model, x[1:n], v[1:n], jv)
+  k = 1
+  # use 3 loops to avoid forming [jlow ; jupp ; jrng]
+  jlow, jupp, jrng = get_slack_nln(nlp)
+  for j in jlow
+    jv[j] -= v[n + k]
+    k += 1
+  end
+  for j in jupp
+    jv[j] -= v[n + k]
+    k += 1
+  end
+  for j in jrng
+    jv[j] -= v[n + k]
+    k += 1
+  end
+  return jv
+end
+
+function NLPModels.jtprod_lin!(
+  nlp::SlackModels,
+  x::AbstractVector,
+  v::AbstractVector,
+  jtv::AbstractVector{T},
+) where {T}
   # J(X)ᵀ v = [J(x)ᵀ] v = [J(x)ᵀ v]
   #           [ -I  ]     [  -v   ]
   @lencheck nlp.meta.nvar x jtv
-  @lencheck nlp.meta.ncon v
+  @lencheck nlp.meta.nlin v
   n = nlp.model.meta.nvar
-  nlow = length(nlp.model.meta.jlow)
-  nupp = length(nlp.model.meta.jupp)
-  nrng = length(nlp.model.meta.jrng)
+  jlow, jupp, jrng = get_slack_lin(nlp)
+  nlow, nupp, nrng = length(jlow), length(jupp), length(jrng)
   @views begin
-    jtprod!(nlp.model, x[1:n], v, jtv[1:n])
-    jtv[(n + 1):(n + nlow)] = -v[nlp.model.meta.jlow]
-    jtv[(n + nlow + 1):(n + nlow + nupp)] = -v[nlp.model.meta.jupp]
-    jtv[(n + nlow + nupp + 1):(nlp.meta.nvar)] = -v[nlp.model.meta.jrng]
+    jtprod_lin!(nlp.model, x[1:n], v, jtv[1:n])
+    jtv[(n + 1):(n + nlow)] = -v[jlow]
+    jtv[(n + nlow + 1):(n + nlow + nupp)] = -v[jupp]
+    jtv[(n + nlow + nupp + 1):(n + nlow + nupp + nrng)] = -v[jrng]
+    jtv[(n + nlow + nupp + nrng + 1):(nlp.meta.nvar)] .= zero(T)
+  end
+  return jtv
+end
+
+function NLPModels.jtprod_nln!(
+  nlp::SlackModels,
+  x::AbstractVector,
+  v::AbstractVector,
+  jtv::AbstractVector{T},
+) where {T}  # J(X)ᵀ v = [J(x)ᵀ] v = [J(x)ᵀ v]
+  #           [ -I  ]     [  -v   ]
+  @lencheck nlp.meta.nvar x jtv
+  @lencheck nlp.meta.nnln v
+  n = nlp.model.meta.nvar
+  jlow, jupp, jrng = get_slack_nln(nlp)
+  nlow, nupp, nrng = length(jlow), length(jupp), length(jrng)
+  @views begin
+    jtprod_nln!(nlp.model, x[1:n], v, jtv[1:n])
+    jtv[(n + 1):(n + nlow)] = -v[jlow]
+    jtv[(n + nlow + 1):(n + nlow + nupp)] = -v[jupp]
+    jtv[(n + nlow + nupp + 1):(n + nlow + nupp + nrng)] = -v[jrng]
+    jtv[(n + nlow + nupp + nrng + 1):(nlp.meta.nvar)] .= zero(T)
   end
   return jtv
 end
