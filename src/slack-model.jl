@@ -1,5 +1,7 @@
 export SlackModel, SlackNLSModel
 
+get_slack_ind(jl, ind) = map(b -> findfirst(x -> x == b, ind), intersect(jl, ind))
+
 @doc raw"""A model whose only inequality constraints are bounds.
 
 Given a model, this type represents a second model in which slack variables are
@@ -47,6 +49,13 @@ The slack variables are implicitly ordered as `[s(low), s(upp), s(rng)]`, where
 mutable struct SlackModel{T, S, M <: AbstractNLPModel{T, S}} <: AbstractNLPModel{T, S}
   meta::NLPModelMeta{T, S}
   model::M
+
+  jlow_lin::Vector{Int}
+  jupp_lin::Vector{Int}
+  jrng_lin::Vector{Int}
+  jlow_nln::Vector{Int}
+  jupp_nln::Vector{Int}
+  jrng_nln::Vector{Int}
 end
 
 NLPModels.show_header(io::IO, nlp::SlackModel) =
@@ -64,6 +73,13 @@ mutable struct SlackNLSModel{T, S, M <: AbstractNLPModel{T, S}} <: AbstractNLSMo
   meta::NLPModelMeta{T, S}
   nls_meta::NLSMeta{T, S}
   model::M
+
+  jlow_lin::Vector{Int}
+  jupp_lin::Vector{Int}
+  jrng_lin::Vector{Int}
+  jlow_nln::Vector{Int}
+  jupp_nln::Vector{Int}
+  jrng_nln::Vector{Int}
 end
 
 NLPModels.show_header(io::IO, nls::SlackNLSModel) =
@@ -117,9 +133,18 @@ end
 function SlackModel(model::AbstractNLPModel; name = model.meta.name * "-slack")
   model.meta.ncon == length(model.meta.jfix) && return model
 
+  lin = setdiff(model.meta.lin, model.meta.jfix)
+  jlow_lin = intersect(model.meta.jlow, lin) == [] ? Int[] : get_slack_ind(model.meta.jlow, lin)
+  jupp_lin = intersect(model.meta.jupp, lin) == [] ? Int[] : get_slack_ind(model.meta.jupp, lin)
+  jrng_lin = intersect(model.meta.jrng, lin) == [] ? Int[] : get_slack_ind(model.meta.jrng, lin)
+  nln = setdiff(model.meta.nln, model.meta.jfix)
+  jlow_nln = intersect(model.meta.jlow, nln) == [] ? Int[] : get_slack_ind(model.meta.jlow, nln)
+  jupp_nln = intersect(model.meta.jupp, nln) == [] ? Int[] : get_slack_ind(model.meta.jupp, nln)
+  jrng_nln = intersect(model.meta.jrng, nln) == [] ? Int[] : get_slack_ind(model.meta.jrng, nln)
+
   meta = slack_meta(model.meta, name = name)
 
-  snlp = SlackModel(meta, model)
+  snlp = SlackModel(meta, model, jlow_lin, jupp_lin, jrng_lin, jlow_nln, jupp_nln, jrng_nln)
   finalizer(nlp -> finalize(nlp.model), snlp)
 
   return snlp
@@ -131,6 +156,15 @@ function SlackNLSModel(
 ) where {T, S}
   ns = model.meta.ncon - length(model.meta.jfix)
   ns == 0 && return model
+
+  lin = setdiff(model.meta.lin, model.meta.jfix)
+  jlow_lin = intersect(model.meta.jlow, lin) == [] ? Int[] : get_slack_ind(model.meta.jlow, lin)
+  jupp_lin = intersect(model.meta.jupp, lin) == [] ? Int[] : get_slack_ind(model.meta.jupp, lin)
+  jrng_lin = intersect(model.meta.jrng, lin) == [] ? Int[] : get_slack_ind(model.meta.jrng, lin)
+  nln = setdiff(model.meta.nln, model.meta.jfix)
+  jlow_nln = intersect(model.meta.jlow, nln) == [] ? Int[] : get_slack_ind(model.meta.jlow, nln)
+  jupp_nln = intersect(model.meta.jupp, nln) == [] ? Int[] : get_slack_ind(model.meta.jupp, nln)
+  jrng_nln = intersect(model.meta.jrng, nln) == [] ? Int[] : get_slack_ind(model.meta.jrng, nln)
 
   meta = slack_meta(model.meta, name = name)
   x0 = similar(model.meta.x0, model.meta.nvar + ns)
@@ -145,7 +179,7 @@ function SlackNLSModel(
     lin = model.nls_meta.lin,
   )
 
-  snls = SlackNLSModel(meta, nls_meta, model)
+  snls = SlackNLSModel(meta, nls_meta, model, jlow_lin, jupp_lin, jrng_lin, jlow_nln, jupp_nln, jrng_nln)
   finalizer(nls -> finalize(nls.model), snls)
 
   return snls
@@ -158,24 +192,6 @@ const SlackModels = Union{SlackModel, SlackNLSModel}
 @default_nlscounters SlackNLSModel model
 
 nls_meta(nlp::SlackNLSModel) = nlp.nls_meta
-
-get_slack_indices(jl, ind) = map(b -> findfirst(x -> x == b, ind), intersect(jl, ind))
-
-function get_slack_lin(nlp)
-  lin = setdiff(nlp.model.meta.lin, nlp.model.meta.jfix)
-  jlow = get_slack_indices(nlp.model.meta.jlow, lin)
-  jupp = get_slack_indices(nlp.model.meta.jupp, lin)
-  jrng = get_slack_indices(nlp.model.meta.jrng, lin)
-  return jlow, jupp, jrng
-end
-
-function get_slack_nln(nlp)
-  nln = setdiff(nlp.model.meta.nln, nlp.model.meta.jfix)
-  jlow = get_slack_indices(nlp.model.meta.jlow, nln)
-  jupp = get_slack_indices(nlp.model.meta.jupp, nln)
-  jrng = get_slack_indices(nlp.model.meta.jrng, nln)
-  return jlow, jupp, jrng
-end
 
 function NLPModels.obj(nlp::SlackModels, x::AbstractVector)
   @lencheck nlp.meta.nvar x
@@ -207,7 +223,7 @@ function NLPModels.cons_lin!(nlp::SlackModels, x::AbstractVector, c::AbstractVec
   @lencheck nlp.meta.nlin c
   n = nlp.model.meta.nvar
   ns = nlp.meta.nvar - n
-  jlow, jupp, jrng = get_slack_lin(nlp)
+  jlow, jupp, jrng = nlp.jlow_lin, nlp.jupp_lin, nlp.jrng_lin
   nlow, nupp, nrng = length(jlow), length(jupp), length(jrng)
   @views begin
     cons_lin!(nlp.model, x[1:n], c)
@@ -226,7 +242,7 @@ function NLPModels.cons_nln!(nlp::SlackModels, x::AbstractVector, c::AbstractVec
   @lencheck nlp.meta.nnln c
   n = nlp.model.meta.nvar
   ns = nlp.meta.nvar - n
-  jlow, jupp, jrng = get_slack_nln(nlp)
+  jlow, jupp, jrng = nlp.jlow_nln, nlp.jupp_nln, nlp.jrng_nln
   nlow, nupp, nrng = length(jlow), length(jupp), length(jrng)
   @views begin
     cons_nln!(nlp.model, x[1:n], c)
@@ -251,7 +267,7 @@ function NLPModels.jac_lin_structure!(
   if lin_nnzj > 0
     @views jac_lin_structure!(nlp.model, rows[1:lin_nnzj], cols[1:lin_nnzj])
   end
-  jlow, jupp, jrng = get_slack_lin(nlp)
+  jlow, jupp, jrng = nlp.jlow_lin, nlp.jupp_lin, nlp.jrng_lin
   nj, lj = lin_nnzj, length(jlow)
   rows[(nj + 1):(nj + lj)] .= jlow
   nj, lj = nj + lj, length(jupp)
@@ -273,7 +289,7 @@ function NLPModels.jac_nln_structure!(
   if nln_nnzj > 0
     @views jac_nln_structure!(nlp.model, rows[1:nln_nnzj], cols[1:nln_nnzj])
   end
-  jlow, jupp, jrng = get_slack_nln(nlp)
+  jlow, jupp, jrng = nlp.jlow_nln, nlp.jupp_nln, nlp.jrng_nln
   nj, lj = nln_nnzj, length(jlow)
   rows[(nj + 1):(nj + lj)] .= jlow
   nj, lj = nj + lj, length(jupp)
@@ -323,7 +339,7 @@ function NLPModels.jprod_lin!(
   @views jprod_lin!(nlp.model, x[1:n], v[1:n], jv)
   k = 1
   # use 3 loops to avoid forming [jlow ; jupp ; jrng]
-  jlow, jupp, jrng = get_slack_lin(nlp)
+  jlow, jupp, jrng = nlp.jlow_lin, nlp.jupp_lin, nlp.jrng_lin
   for j in jlow
     jv[j] -= v[n + k]
     k += 1
@@ -354,7 +370,7 @@ function NLPModels.jprod_nln!(
   @views jprod_nln!(nlp.model, x[1:n], v[1:n], jv)
   k = 1
   # use 3 loops to avoid forming [jlow ; jupp ; jrng]
-  jlow, jupp, jrng = get_slack_nln(nlp)
+  jlow, jupp, jrng = nlp.jlow_nln, nlp.jupp_nln, nlp.jrng_nln
   for j in jlow
     jv[j] -= v[n + k]
     k += 1
@@ -381,7 +397,7 @@ function NLPModels.jtprod_lin!(
   @lencheck nlp.meta.nvar x jtv
   @lencheck nlp.meta.nlin v
   n = nlp.model.meta.nvar
-  jlow, jupp, jrng = get_slack_lin(nlp)
+  jlow, jupp, jrng = nlp.jlow_lin, nlp.jupp_lin, nlp.jrng_lin
   nlow, nupp, nrng = length(jlow), length(jupp), length(jrng)
   @views begin
     jtprod_lin!(nlp.model, x[1:n], v, jtv[1:n])
@@ -403,7 +419,7 @@ function NLPModels.jtprod_nln!(
   @lencheck nlp.meta.nvar x jtv
   @lencheck nlp.meta.nnln v
   n = nlp.model.meta.nvar
-  jlow, jupp, jrng = get_slack_nln(nlp)
+  jlow, jupp, jrng = nlp.jlow_nln, nlp.jupp_nln, nlp.jrng_nln
   nlow, nupp, nrng = length(jlow), length(jupp), length(jrng)
   @views begin
     jtprod_nln!(nlp.model, x[1:n], v, jtv[1:n])
