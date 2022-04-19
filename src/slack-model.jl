@@ -179,7 +179,8 @@ function SlackNLSModel(
     lin = model.nls_meta.lin,
   )
 
-  snls = SlackNLSModel(meta, nls_meta, model, jlow_lin, jupp_lin, jrng_lin, jlow_nln, jupp_nln, jrng_nln)
+  snls =
+    SlackNLSModel(meta, nls_meta, model, jlow_lin, jupp_lin, jrng_lin, jlow_nln, jupp_nln, jrng_nln)
   finalizer(nls -> finalize(nls.model), snls)
 
   return snls
