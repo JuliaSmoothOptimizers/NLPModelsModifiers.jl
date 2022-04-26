@@ -228,14 +228,14 @@ function NLPModels.cons_lin!(nlp::SlackModels, x::AbstractVector, c::AbstractVec
   nlow, nupp, nrng = length(jlow), length(jupp), length(jrng)
   @views begin
     cons_lin!(nlp.model, x[1:n], c)
-    for j in jlow
-      c[j] -= x[n + j]
+    for (j, i) in zip(jlow, (n + 1):(n + nlow))
+      c[j] -= x[i]
     end
-    for j in jupp
-      c[j] -= x[n + j]
+    for (j, i) in zip(jupp, (n + nlow + 1):(n + nlow + nupp))
+      c[j] -= x[i]
     end
-    for j in jrng
-      c[j] -= x[n + j]
+    for (j, i) in zip(jrng, (n + nlow + nupp + 1):(n + nlow + nupp + nrng))
+      c[j] -= x[i]
     end
   end
   return c
@@ -250,14 +250,14 @@ function NLPModels.cons_nln!(nlp::SlackModels, x::AbstractVector, c::AbstractVec
   nlow, nupp, nrng = length(jlow), length(jupp), length(jrng)
   @views begin
     cons_nln!(nlp.model, x[1:n], c)
-    for j in jlow
-      c[j] -= x[n + j]
+    for (j, i) in zip(jlow, (n + 1):(n + nlow))
+      c[j] -= x[i]
     end
-    for j in jupp
-      c[j] -= x[n + j]
+    for (j, i) in zip(jupp, (n + nlow + 1):(n + nlow + nupp))
+      c[j] -= x[i]
     end
-    for j in jrng
-      c[j] -= x[n + j]
+    for (j, i) in zip(jrng, (n + nlow + nupp + 1):(n + nlow + nupp + nrng))
+      c[j] -= x[i]
     end
   end
   return c
