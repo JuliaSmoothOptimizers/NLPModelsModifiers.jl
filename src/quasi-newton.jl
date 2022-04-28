@@ -70,7 +70,7 @@ for meth in (
   :jprod_nln,
   :jtprod,
   :jtprod_lin,
-  :jtprod_lin,
+  :jtprod_nln,
   :objgrad,
   :objgrad!,
   :jac_coord!,
