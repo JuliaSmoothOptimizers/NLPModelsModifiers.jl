@@ -1,8 +1,8 @@
 @testset "SlackNLSModel tests" begin
   @testset "NLS API" for T in [Float64, Float32]
     F(x) = T[1 - x[1]; 10 * (x[2] - x[1]^2)]
-    JF(x) = T[-1.0 0 0 0; -20*x[1] 10 0 0]
-    HF(x, w) = w[2] * diagm(0 => T[-20.0; zeros(T, 3)])
+    JF(x) = T[-1.0 0 0 0 0; -20*x[1] 10 0 0 0]
+    HF(x, w) = w[2] * diagm(0 => T[-20.0; zeros(T, 4)])
 
     nls = SlackNLSModel(SimpleNLSModel(T))
     n = nls.meta.nvar
@@ -71,14 +71,14 @@
 
   @testset "NLP API" for T in [Float64, Float32]
     F(x) = T[1 - x[1]; 10 * (x[2] - x[1]^2)]
-    JF(x) = T[-1.0 0 0 0; -20*x[1] 10 0 0]
-    HF(x, w) = w[2] * diagm(0 => T[-20.0; zeros(T, 3)])
+    JF(x) = T[-1.0 0 0 0 0; -20*x[1] 10 0 0 0]
+    HF(x, w) = w[2] * diagm(0 => T[-20.0; zeros(T, 4)])
     f(x) = norm(F(x))^2 / 2
     ∇f(x) = JF(x)' * F(x)
     H(x) = JF(x)' * JF(x) + HF(x, F(x))
-    c(x) = T[x[1] + x[2]^2 - x[3]; x[1]^2 + x[2] - x[4]; x[1]^2 + x[2]^2 - 1]
-    J(x) = T[1 2x[2] -1 0; 2x[1] 1 0 -1; 2x[1] 2x[2] 0 0]
-    H(x, y) = H(x) + diagm(0 => T[2y[2] + 2y[3]; 2y[1] + 2y[3]; 0; 0])
+    c(x) = T[x[1] + x[2]^2 - x[4]; x[1]^2 + x[2] - x[5]; x[1]^2 + x[2]^2 - 1; x[1] + x[2] - x[3]]
+    J(x) = T[1 2x[2] 0 -1 0; 2x[1] 1 0 0 -1; 2x[1] 2x[2] 0 0 0; 1 1 -1 0 0]
+    H(x, y) = H(x) + diagm(0 => T[2y[2] + 2y[3]; 2y[1] + 2y[3]; 0; 0; 0])
 
     nls = SlackNLSModel(SimpleNLSModel(T))
     n = nls.meta.nvar
@@ -164,16 +164,16 @@
     showed = String(take!(io))
     expected = """SlackNLSModel - Nonlinear least-squares model with slack variables
     Problem name: Simple NLS Model-slack
-     All variables: ████████████████████ 4      All constraints: ████████████████████ 3        All residuals: ████████████████████ 2
-              free: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0                 free: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0               linear: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0
-             lower: ██████████⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 2                lower: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0            nonlinear: ████████████████████ 2
-             upper: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0                upper: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0                 nnzj: ( 62.50% sparsity)   3
-           low/upp: ██████████⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 2              low/upp: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0                 nnzh: ( 90.00% sparsity)   1
-             fixed: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0                fixed: ████████████████████ 3
-            infeas: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0               infeas: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0
-              nnzh: ( 70.00% sparsity)   3               linear: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0
-                                                      nonlinear: ████████████████████ 3
-                                                           nnzj: ( 33.33% sparsity)   8
+     All variables: ████████████████████ 5      All constraints: ████████████████████ 4        All residuals: ████████████████████ 2     
+              free: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0                 free: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0               linear: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0     
+             lower: ████████⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 2                lower: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0            nonlinear: ████████████████████ 2     
+             upper: ████⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 1                upper: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0                 nnzj: ( 70.00% sparsity)   3     
+           low/upp: ████████⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 2              low/upp: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0                 nnzh: ( 93.33% sparsity)   1     
+             fixed: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0                fixed: ████████████████████ 4     
+            infeas: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0               infeas: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0     
+              nnzh: ( 80.00% sparsity)   3               linear: █████⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 1     
+                                                      nonlinear: ███████████████⋅⋅⋅⋅⋅ 3     
+                                                           nnzj: ( 45.00% sparsity)   11
 
     Counters:
                obj: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0                 grad: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0                 cons: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0     
