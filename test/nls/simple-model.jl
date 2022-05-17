@@ -2,12 +2,13 @@
     SimpleNLSModel <: AbstractNLSModel
 
 Simple NLSModel for testing purposes.
-Modified problem 20 in the Hock-Schittkowski Suite.
+Modified problem 20 in the Hock-Schittkowski Suite with an additional linear constraint.
 
      min   ½‖F(x)‖²
     s.to   x₁ + x₂² ≥ 0
            x₁² + x₂ ≥ 0
            x₁² + x₂² = 1
+           x₁ + x₂ ≤ 10
            0 ≤ x ≤ 1,
 
 where
@@ -31,13 +32,13 @@ function SimpleNLSModel(::Type{T}) where {T}
     name = "Simple NLS Model",
     lvar = zeros(T, 2),
     uvar = ones(T, 2),
-    ncon = 3,
-    lcon = T[0; 0; 1],
-    ucon = T[Inf; Inf; 1],
-    nnzj = 6,
-    lin_nnzj = 0,
+    ncon = 4,
+    lcon = T[0; 0; 1; -Inf],
+    ucon = T[Inf; Inf; 1; 10],
+    nnzj = 8,
+    lin_nnzj = 2,
     nln_nnzj = 6,
-    lin = [],
+    lin = [4],
   )
   nls_meta = NLSMeta{T, Vector{T}}(2, 2, nnzj = 3, nnzh = 1)
 
@@ -140,8 +141,16 @@ end
 function NLPModels.cons_nln!(nls::SimpleNLSModel, x::AbstractVector, cx::AbstractVector)
   @lencheck 2 x
   @lencheck 3 cx
-  increment!(nls, :neval_cons)
+  increment!(nls, :neval_cons_nln)
   cx .= [x[1] + x[2]^2; x[1]^2 + x[2]; x[1]^2 + x[2]^2 - 1]
+  return cx
+end
+
+function NLPModels.cons_lin!(nls::SimpleNLSModel, x::AbstractVector, cx::AbstractVector)
+  @lencheck 2 x
+  @lencheck 1 cx
+  increment!(nls, :neval_cons_lin)
+  cx .= [x[1] + x[2]]
   return cx
 end
 
@@ -156,11 +165,30 @@ function NLPModels.jac_nln_structure!(
   return rows, cols
 end
 
+function NLPModels.jac_lin_structure!(
+  nls::SimpleNLSModel,
+  rows::AbstractVector{<:Integer},
+  cols::AbstractVector{<:Integer},
+)
+  @lencheck 2 rows cols
+  rows .= [1, 1]
+  cols .= [1, 2]
+  return rows, cols
+end
+
 function NLPModels.jac_nln_coord!(nls::SimpleNLSModel, x::AbstractVector, vals::AbstractVector)
   @lencheck 2 x
   @lencheck 6 vals
-  increment!(nls, :neval_jac)
+  increment!(nls, :neval_jac_nln)
   vals .= [1, 2x[2], 2x[1], 1, 2x[1], 2x[2]]
+  return vals
+end
+
+function NLPModels.jac_lin_coord!(nls::SimpleNLSModel, x::AbstractVector, vals::AbstractVector)
+  @lencheck 2 x
+  @lencheck 2 vals
+  increment!(nls, :neval_jac_lin)
+  vals .= [1, 1]
   return vals
 end
 
@@ -172,8 +200,21 @@ function NLPModels.jprod_nln!(
 )
   @lencheck 2 x v
   @lencheck 3 Jv
-  increment!(nls, :neval_jprod)
+  increment!(nls, :neval_jprod_nln)
   Jv .= [v[1] + 2x[2] * v[2]; 2x[1] * v[1] + v[2]; 2x[1] * v[1] + 2x[2] * v[2]]
+  return Jv
+end
+
+function NLPModels.jprod_lin!(
+  nls::SimpleNLSModel,
+  x::AbstractVector,
+  v::AbstractVector,
+  Jv::AbstractVector,
+)
+  @lencheck 2 x v
+  @lencheck 1 Jv
+  increment!(nls, :neval_jprod_lin)
+  Jv .= [v[1] + v[2]]
   return Jv
 end
 
@@ -185,8 +226,21 @@ function NLPModels.jtprod_nln!(
 )
   @lencheck 2 x Jtv
   @lencheck 3 v
-  increment!(nls, :neval_jtprod)
+  increment!(nls, :neval_jtprod_nln)
   Jtv .= [v[1] + 2x[1] * (v[2] + v[3]); v[2] + 2x[2] * (v[1] + v[3])]
+  return Jtv
+end
+
+function NLPModels.jtprod_lin!(
+  nls::SimpleNLSModel,
+  x::AbstractVector,
+  v::AbstractVector,
+  Jtv::AbstractVector,
+)
+  @lencheck 2 x Jtv
+  @lencheck 1 v
+  increment!(nls, :neval_jtprod_lin)
+  Jtv .= [v[1]; v[1]]
   return Jtv
 end
 
@@ -203,7 +257,7 @@ function NLPModels.hess(
   obj_weight = 1.0,
 ) where {T}
   @lencheck 2 x
-  @lencheck 3 y
+  @lencheck 4 y
   increment!(nls, :neval_hess)
   return Symmetric(
     [
@@ -254,7 +308,7 @@ function NLPModels.hess_coord!(
   obj_weight = 1.0,
 )
   @lencheck 2 x
-  @lencheck 3 y
+  @lencheck 4 y
   @lencheck 3 vals
   Hx = hess(nls, x, y, obj_weight = obj_weight)
   k = 1
@@ -311,5 +365,6 @@ function NLPModels.ghjvprod!(
   gHv[1] = g[2] * 2v[2]
   gHv[2] = g[1] * 2v[1]
   gHv[3] = g[1] * 2v[1] + g[2] * 2v[2]
+  gHv[4] = zero(T)
   return gHv
 end
