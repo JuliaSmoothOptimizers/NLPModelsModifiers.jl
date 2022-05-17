@@ -77,6 +77,8 @@ function FeasibilityFormNLS(
     y0 = y0,
     lin = meta.lin .+ nequ, # [nls.nls_meta.lin; meta.lin .+ nequ] linear API for residual not (yet) implemented
     nnzj = meta.nnzj + nls.nls_meta.nnzj + nequ,
+    nln_nnzj = meta.nln_nnzj + nls.nls_meta.nnzj + nequ,
+    lin_nnzj = meta.lin_nnzj,
     nnzh = nnzh,
     name = name,
   )
@@ -117,33 +119,40 @@ function NLPModels.objgrad!(nlp::FeasibilityFormNLS, x::Array{Float64}, g::Array
   return f, g
 end
 
-function NLPModels.cons!(nlp::FeasibilityFormNLS, xr::AbstractVector, c::AbstractVector)
+function NLPModels.cons_nln!(nlp::FeasibilityFormNLS, xr::AbstractVector, c::AbstractVector)
   @lencheck nlp.meta.nvar xr
-  @lencheck nlp.meta.ncon c
-  increment!(nlp, :neval_cons)
-  n, m, ne = nlp.internal.meta.nvar, nlp.internal.meta.ncon, nlp.internal.nls_meta.nequ
+  @lencheck nlp.meta.nnln c
+  increment!(nlp, :neval_cons_nln)
+  n, m, ne = nlp.internal.meta.nvar, nlp.internal.meta.nnln, nlp.internal.nls_meta.nequ
   x = @view xr[1:n]
   r = @view xr[(n + 1):end]
   residual!(nlp.internal, x, @view c[1:ne])
   c[1:ne] .-= r
   if m > 0
-    cons!(nlp.internal, x, @view c[(ne + 1):end])
+    cons_nln!(nlp.internal, x, @view c[(ne + 1):end])
   end
   return c
 end
 
-function NLPModels.jac_structure!(
+function NLPModels.cons_lin!(nlp::FeasibilityFormNLS, xr::AbstractVector, c::AbstractVector)
+  @lencheck nlp.meta.nvar xr
+  @lencheck nlp.meta.nlin c
+  increment!(nlp, :neval_cons_lin)
+  return cons_lin!(nlp.internal, x, c)
+end
+
+function NLPModels.jac_nln_structure!(
   nlp::FeasibilityFormNLS,
   rows::AbstractVector{<:Integer},
   cols::AbstractVector{<:Integer},
 )
-  @lencheck nlp.meta.nnzj rows cols
-  n, m, ne = nlp.internal.meta.nvar, nlp.internal.meta.ncon, nlp.internal.nls_meta.nequ
+  @lencheck nlp.meta.nln_nnzj rows cols
+  n, m, ne = nlp.internal.meta.nvar, nlp.internal.meta.nnln, nlp.internal.nls_meta.nequ
   nnzjF = nlp.internal.nls_meta.nnzj
   @views jac_structure_residual!(nlp.internal, rows[1:nnzjF], cols[1:nnzjF])
   if m > 0
-    idx = nnzjF .+ (1:(nlp.internal.meta.nnzj))
-    @views jac_structure!(nlp.internal, rows[idx], cols[idx])
+    idx = nnzjF .+ (1:(nlp.internal.meta.nln_nnzj))
+    @views jac_nln_structure!(nlp.internal, rows[idx], cols[idx])
     rows[idx] .+= ne
   end
   rows[(end - ne + 1):end] .= 1:ne
@@ -151,24 +160,58 @@ function NLPModels.jac_structure!(
   return rows, cols
 end
 
-function NLPModels.jac_coord!(nlp::FeasibilityFormNLS, xr::AbstractVector, vals::AbstractVector)
+function NLPModels.jac_lin_structure!(
+  nlp::FeasibilityFormNLS,
+  rows::AbstractVector{<:Integer},
+  cols::AbstractVector{<:Integer},
+)
+  @lencheck nlp.meta.lin_nnzj rows cols
+  return jac_lin_structure!(nlp.internal, rows, cols)
+end
+
+function NLPModels.jac_nln_coord!(nlp::FeasibilityFormNLS, xr::AbstractVector, vals::AbstractVector)
   @lencheck nlp.meta.nvar xr
-  @lencheck nlp.meta.nnzj vals
-  n, m, ne = nlp.internal.meta.nvar, nlp.internal.meta.ncon, nlp.internal.nls_meta.nequ
+  @lencheck nlp.meta.nln_nnzj vals
+  n, m, ne = nlp.internal.meta.nvar, nlp.internal.meta.nnln, nlp.internal.nls_meta.nequ
   x = @view xr[1:n]
   nnzjF = nlp.internal.nls_meta.nnzj
-  nnzjc = m > 0 ? nlp.internal.meta.nnzj : 0
+  nnzjc = m > 0 ? nlp.internal.meta.nln_nnzj : 0
   I = 1:nnzjF
   @views jac_coord_residual!(nlp.internal, x, vals[I])
   if m > 0
     I = (nnzjF + 1):(nnzjF + nnzjc)
-    @views jac_coord!(nlp.internal, x, vals[I])
+    @views jac_nln_coord!(nlp.internal, x, vals[I])
   end
   vals[(nnzjF + nnzjc + 1):(nnzjF + nnzjc + ne)] .= -1
   return vals
 end
 
-function NLPModels.jprod!(
+function NLPModels.jac_lin_coord!(nlp::FeasibilityFormNLS, xr::AbstractVector, vals::AbstractVector)
+  @lencheck nlp.meta.nvar xr
+  @lencheck nlp.meta.lin_nnzj vals
+  return jac_lin_coord!(nlp.internal, xr, vals)
+end
+
+function NLPModels.jprod_nln!(
+  nlp::FeasibilityFormNLS,
+  xr::AbstractVector,
+  v::AbstractVector,
+  jv::AbstractVector,
+)
+  @lencheck nlp.meta.nvar xr v
+  @lencheck nlp.meta.nnln jv
+  increment!(nlp, :neval_jprod_nln)
+  n, m, ne = nlp.internal.meta.nvar, nlp.internal.meta.nnln, nlp.internal.nls_meta.nequ
+  x = @view xr[1:n]
+  @views jprod_residual!(nlp.internal, x, v[1:n], jv[1:ne])
+  @views jv[1:ne] .-= v[(n + 1):end]
+  if m > 0
+    @views jprod_nln!(nlp.internal, x, v[1:n], jv[(ne + 1):end])
+  end
+  return jv
+end
+
+function NLPModels.jprod_lin!(
   nlp::FeasibilityFormNLS,
   xr::AbstractVector,
   v::AbstractVector,
@@ -176,15 +219,8 @@ function NLPModels.jprod!(
 )
   @lencheck nlp.meta.nvar xr v
   @lencheck nlp.meta.ncon jv
-  increment!(nlp, :neval_jprod)
-  n, m, ne = nlp.internal.meta.nvar, nlp.internal.meta.ncon, nlp.internal.nls_meta.nequ
-  x = @view xr[1:n]
-  @views jprod_residual!(nlp.internal, x, v[1:n], jv[1:ne])
-  @views jv[1:ne] .-= v[(n + 1):end]
-  if m > 0
-    @views jprod!(nlp.internal, x, v[1:n], jv[(ne + 1):end])
-  end
-  return jv
+  increment!(nlp, :neval_jprod_lin)
+  return jprod_lin!(nlp.internal, xr, v, jv)
 end
 
 function NLPModels.jtprod!(
@@ -204,6 +240,37 @@ function NLPModels.jtprod!(
   end
   @views jtv[(n + 1):end] .= -v[1:ne]
   return jtv
+end
+
+function NLPModels.jtprod_nln!(
+  nlp::FeasibilityFormNLS,
+  xr::AbstractVector,
+  v::AbstractVector,
+  jtv::AbstractVector,
+)
+  @lencheck nlp.meta.nvar xr jtv
+  @lencheck nlp.meta.nnln v
+  increment!(nlp, :neval_jtprod)
+  n, m, ne = nlp.internal.meta.nvar, nlp.internal.meta.nnln, nlp.internal.nls_meta.nequ
+  x = @view xr[1:n]
+  @views jtprod_residual!(nlp.internal, x, v[1:ne], jtv[1:n])
+  if m > 0
+    @views jtv[1:n] .+= jtprod_nln(nlp.internal, x, v[(ne + 1):end])
+  end
+  @views jtv[(n + 1):end] .= -v[1:ne]
+  return jtv
+end
+
+function NLPModels.jtprod_lin!(
+  nlp::FeasibilityFormNLS,
+  xr::AbstractVector,
+  v::AbstractVector,
+  jtv::AbstractVector,
+)
+  @lencheck nlp.meta.nvar xr jtv
+  @lencheck nlp.meta.nlin v
+  increment!(nlp, :neval_jtprod_lin)
+  return jtprod_lin!(nlp.internal, xr, v, jtv)
 end
 
 function NLPModels.hess_structure!(
