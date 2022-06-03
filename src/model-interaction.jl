@@ -26,7 +26,9 @@ function FeasibilityFormNLS(
     lcon = meta.lcon,
     ucon = meta.ucon,
     y0 = meta.y0,
-    lin = meta.lin,
+    # lin = meta.lin, # linear API for residual not (yet) implemented
+    lin_nnzj = 0,
+    nln_nnzj = nnzj,
     nnzj = nnzj,
     nnzh = nnzh,
     name = name,
