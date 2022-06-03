@@ -75,7 +75,7 @@ function FeasibilityFormNLS(
     lcon = lcon,
     ucon = ucon,
     y0 = y0,
-    lin = meta.lin .+ nequ, # [nls.nls_meta.lin; meta.lin .+ nequ] linear API for residual not (yet) implemented
+    lin = meta.lin .+ nequ, # nls.nls_meta.lin linear constraint for residual not implemented
     nnzj = meta.nnzj + nls.nls_meta.nnzj + nequ,
     nln_nnzj = meta.nln_nnzj + nls.nls_meta.nnzj + nequ,
     lin_nnzj = meta.lin_nnzj,
@@ -138,6 +138,7 @@ function NLPModels.cons_lin!(nlp::FeasibilityFormNLS, xr::AbstractVector, c::Abs
   @lencheck nlp.meta.nvar xr
   @lencheck nlp.meta.nlin c
   increment!(nlp, :neval_cons_lin)
+  x = @view xr[1:nlp.internal.meta.nvar]
   return cons_lin!(nlp.internal, x, c)
 end
 
@@ -172,6 +173,7 @@ end
 function NLPModels.jac_nln_coord!(nlp::FeasibilityFormNLS, xr::AbstractVector, vals::AbstractVector)
   @lencheck nlp.meta.nvar xr
   @lencheck nlp.meta.nln_nnzj vals
+  increment!(nlp, :neval_jac_nln)
   n, m, ne = nlp.internal.meta.nvar, nlp.internal.meta.nnln, nlp.internal.nls_meta.nequ
   x = @view xr[1:n]
   nnzjF = nlp.internal.nls_meta.nnzj
@@ -189,7 +191,9 @@ end
 function NLPModels.jac_lin_coord!(nlp::FeasibilityFormNLS, xr::AbstractVector, vals::AbstractVector)
   @lencheck nlp.meta.nvar xr
   @lencheck nlp.meta.lin_nnzj vals
-  return jac_lin_coord!(nlp.internal, xr, vals)
+  increment!(nlp, :neval_jac_lin)
+  x = @view xr[1:nlp.internal.meta.nvar]
+  return jac_lin_coord!(nlp.internal, x, vals)
 end
 
 function NLPModels.jprod_nln!(
@@ -214,13 +218,15 @@ end
 function NLPModels.jprod_lin!(
   nlp::FeasibilityFormNLS,
   xr::AbstractVector,
-  v::AbstractVector,
+  vr::AbstractVector,
   jv::AbstractVector,
 )
-  @lencheck nlp.meta.nvar xr v
-  @lencheck nlp.meta.ncon jv
+  @lencheck nlp.meta.nvar xr vr
+  @lencheck nlp.meta.nlin jv
   increment!(nlp, :neval_jprod_lin)
-  return jprod_lin!(nlp.internal, xr, v, jv)
+  x = @view xr[1:nlp.internal.meta.nvar]
+  v = @view vr[1:nlp.internal.meta.nvar]
+  return jprod_lin!(nlp.internal, x, v, jv)
 end
 
 function NLPModels.jtprod!(
@@ -250,7 +256,7 @@ function NLPModels.jtprod_nln!(
 )
   @lencheck nlp.meta.nvar xr jtv
   @lencheck nlp.meta.nnln v
-  increment!(nlp, :neval_jtprod)
+  increment!(nlp, :neval_jtprod_nln)
   n, m, ne = nlp.internal.meta.nvar, nlp.internal.meta.nnln, nlp.internal.nls_meta.nequ
   x = @view xr[1:n]
   @views jtprod_residual!(nlp.internal, x, v[1:ne], jtv[1:n])
@@ -263,14 +269,18 @@ end
 
 function NLPModels.jtprod_lin!(
   nlp::FeasibilityFormNLS,
-  xr::AbstractVector,
+  xr::AbstractVector{T},
   v::AbstractVector,
-  jtv::AbstractVector,
-)
-  @lencheck nlp.meta.nvar xr jtv
+  jtvr::AbstractVector,
+) where {T}
+  @lencheck nlp.meta.nvar xr jtvr
   @lencheck nlp.meta.nlin v
   increment!(nlp, :neval_jtprod_lin)
-  return jtprod_lin!(nlp.internal, xr, v, jtv)
+  x = @view xr[1:nlp.internal.meta.nvar]
+  jtv = @view jtvr[1:nlp.internal.meta.nvar]
+  jtprod_lin!(nlp.internal, x, v, jtv)
+  @views jtvr[(nlp.internal.meta.nvar + 1):end] .= zero(T)
+  return jtvr
 end
 
 function NLPModels.hess_structure!(
