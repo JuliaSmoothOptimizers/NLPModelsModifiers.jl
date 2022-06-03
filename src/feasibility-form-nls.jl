@@ -75,7 +75,7 @@ function FeasibilityFormNLS(
     lcon = lcon,
     ucon = ucon,
     y0 = y0,
-    lin = [nls.nls_meta.lin; meta.lin .+ nequ],
+    lin = meta.lin .+ nequ, # [nls.nls_meta.lin; meta.lin .+ nequ] linear API for residual not (yet) implemented
     nnzj = meta.nnzj + nls.nls_meta.nnzj + nequ,
     nnzh = nnzh,
     name = name,
