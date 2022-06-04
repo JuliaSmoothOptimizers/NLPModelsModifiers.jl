@@ -471,9 +471,9 @@ function NLPModels.jtprod_nln!(
     jtprod_nln!(nlp.model, x[1:n], v, jtv[1:n])
     jtv[(n + 1):(n + nslacklin)] .= zero(T)
     n += nslacklin
-    jtv[(n + 1):(n + nlow)] = -v[jlow]
-    jtv[(n + nlow + 1):(n + nlow + nupp)] = -v[jupp]
-    jtv[(n + nlow + nupp + 1):(n + nlow + nupp + nrng)] = -v[jrng]
+    jtv[(n + 1):(n + nlow)] .= -v[jlow]
+    jtv[(n + nlow + 1):(n + nlow + nupp)] .= -v[jupp]
+    jtv[(n + nlow + nupp + 1):(n + nlow + nupp + nrng)] .= -v[jrng]
   end
   return jtv
 end
