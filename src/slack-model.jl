@@ -1,27 +1,30 @@
 export SlackModel, SlackNLSModel
 
+"""
+    get_slack_ind(jl, ind)
+
+Return the relative indices of the set of indices `jl` within the set of indices `ind`.
+"""
 function get_slack_ind(jl, ind)
-  if intersect(jl, ind) == []
+  int = intersect(jl, ind)
+  if isempty(int)
     return Int[]
   end
-  return map(b -> findfirst(x -> x == b, ind), intersect(jl, ind))
+  return map(b -> findfirst(x -> x == b, ind), int)
 end
 
 """
     get_relative_indices(model)
 
-Return two sets of triplet with the relative indices of `jlow`, `jupp` and `jrng`
-within the set of linear and nonlinear indices.
+Return the relative indices of `jlow`, `jupp` and `jrng` within the set of linear and nonlinear indices.
 """
 function get_relative_indices(model)
-  lin = model.meta.lin
-  jlow_lin = get_slack_ind(model.meta.jlow, lin)
-  jupp_lin = get_slack_ind(model.meta.jupp, lin)
-  jrng_lin = get_slack_ind(model.meta.jrng, lin)
-  nln = model.meta.nln
-  jlow_nln = get_slack_ind(model.meta.jlow, nln)
-  jupp_nln = get_slack_ind(model.meta.jupp, nln)
-  jrng_nln = get_slack_ind(model.meta.jrng, nln)
+  jlow_lin = get_slack_ind(model.meta.jlow, model.meta.lin)
+  jupp_lin = get_slack_ind(model.meta.jupp, model.meta.lin)
+  jrng_lin = get_slack_ind(model.meta.jrng, model.meta.lin)
+  jlow_nln = get_slack_ind(model.meta.jlow, model.meta.nln)
+  jupp_nln = get_slack_ind(model.meta.jupp, model.meta.nln)
+  jrng_nln = get_slack_ind(model.meta.jrng, model.meta.nln)
   return jlow_lin, jupp_lin, jrng_lin, jlow_nln, jupp_nln, jrng_nln
 end
 
@@ -442,9 +445,9 @@ function NLPModels.jtprod_lin!(
   nlow, nupp, nrng = length(jlow), length(jupp), length(jrng)
   @views begin
     jtprod_lin!(nlp.model, x[1:n], v, jtv[1:n])
-    jtv[(n + 1):(n + nlow)] = -v[jlow]
-    jtv[(n + nlow + 1):(n + nlow + nupp)] = -v[jupp]
-    jtv[(n + nlow + nupp + 1):(n + nlow + nupp + nrng)] = -v[jrng]
+    jtv[(n + 1):(n + nlow)] .= -v[jlow]
+    jtv[(n + nlow + 1):(n + nlow + nupp)] .= -v[jupp]
+    jtv[(n + nlow + nupp + 1):(n + nlow + nupp + nrng)] .= -v[jrng]
     jtv[(n + nlow + nupp + nrng + 1):(nlp.meta.nvar)] .= zero(T)
   end
   return jtv
