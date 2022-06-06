@@ -138,7 +138,7 @@ function NLPModels.cons_lin!(nlp::FeasibilityFormNLS, xr::AbstractVector, c::Abs
   @lencheck nlp.meta.nvar xr
   @lencheck nlp.meta.nlin c
   increment!(nlp, :neval_cons_lin)
-  x = @view xr[1:nlp.internal.meta.nvar]
+  x = @view xr[1:(nlp.internal.meta.nvar)]
   return cons_lin!(nlp.internal, x, c)
 end
 
@@ -152,7 +152,7 @@ function NLPModels.jac_nln_structure!(
   nnzjF = nlp.internal.nls_meta.nnzj
   @views jac_structure_residual!(nlp.internal, rows[1:nnzjF], cols[1:nnzjF])
   if m > 0
-    idx = nnzjF .+ (1:nlp.internal.meta.nln_nnzj)
+    idx = nnzjF .+ (1:(nlp.internal.meta.nln_nnzj))
     @views jac_nln_structure!(nlp.internal, rows[idx], cols[idx])
     rows[idx] .+= ne
   end
@@ -192,7 +192,7 @@ function NLPModels.jac_lin_coord!(nlp::FeasibilityFormNLS, xr::AbstractVector, v
   @lencheck nlp.meta.nvar xr
   @lencheck nlp.meta.lin_nnzj vals
   increment!(nlp, :neval_jac_lin)
-  x = @view xr[1:nlp.internal.meta.nvar]
+  x = @view xr[1:(nlp.internal.meta.nvar)]
   return jac_lin_coord!(nlp.internal, x, vals)
 end
 
@@ -224,8 +224,8 @@ function NLPModels.jprod_lin!(
   @lencheck nlp.meta.nvar xr vr
   @lencheck nlp.meta.nlin jv
   increment!(nlp, :neval_jprod_lin)
-  x = @view xr[1:nlp.internal.meta.nvar]
-  v = @view vr[1:nlp.internal.meta.nvar]
+  x = @view xr[1:(nlp.internal.meta.nvar)]
+  v = @view vr[1:(nlp.internal.meta.nvar)]
   return jprod_lin!(nlp.internal, x, v, jv)
 end
 
@@ -276,8 +276,8 @@ function NLPModels.jtprod_lin!(
   @lencheck nlp.meta.nvar xr jtvr
   @lencheck nlp.meta.nlin v
   increment!(nlp, :neval_jtprod_lin)
-  x = @view xr[1:nlp.internal.meta.nvar]
-  jtv = @view jtvr[1:nlp.internal.meta.nvar]
+  x = @view xr[1:(nlp.internal.meta.nvar)]
+  jtv = @view jtvr[1:(nlp.internal.meta.nvar)]
   jtprod_lin!(nlp.internal, x, v, jtv)
   @views jtvr[(nlp.internal.meta.nvar + 1):end] .= zero(T)
   return jtvr
