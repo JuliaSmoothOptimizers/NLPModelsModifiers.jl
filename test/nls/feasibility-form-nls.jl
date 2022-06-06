@@ -93,8 +93,8 @@
     @test jac(nls, x) ≈ J(x)
     @test jprod(nls, x, v) ≈ J(x) * v
     @test jtprod(nls, x, w) ≈ J(x)' * w
-    @test jtprod_lin(nls, x, w[6:6]) ≈ J(x)[6:6,:]' * w[6:6]
-    @test jtprod_nln(nls, x, w[1:5]) ≈ J(x)[1:5,:]' * w[1:5]
+    @test jtprod_lin(nls, x, w[6:6]) ≈ J(x)[6:6, :]' * w[6:6]
+    @test jtprod_nln(nls, x, w[1:5]) ≈ J(x)[1:5, :]' * w[1:5]
     @test hess(nls, x, y) ≈ H(x, y)
     @test hprod(nls, x, y, v) ≈ H(x, y) * v
     fx, cx = objcons(nls, x)
