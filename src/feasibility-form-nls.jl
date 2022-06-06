@@ -75,7 +75,7 @@ function FeasibilityFormNLS(
     lcon = lcon,
     ucon = ucon,
     y0 = y0,
-    lin = meta.lin .+ nequ, # nls.nls_meta.lin linear constraint for residual not implemented
+    lin = meta.lin .+ nequ, # [nls.nls_meta.lin; meta.lin .+ nequ] linear API for residual not (yet) implemented
     nnzj = meta.nnzj + nls.nls_meta.nnzj + nequ,
     nln_nnzj = meta.nln_nnzj + nls.nls_meta.nnzj + nequ,
     lin_nnzj = meta.lin_nnzj,
@@ -152,7 +152,7 @@ function NLPModels.jac_nln_structure!(
   nnzjF = nlp.internal.nls_meta.nnzj
   @views jac_structure_residual!(nlp.internal, rows[1:nnzjF], cols[1:nnzjF])
   if m > 0
-    idx = nnzjF .+ (1:(nlp.internal.meta.nln_nnzj))
+    idx = nnzjF .+ (1:nlp.internal.meta.nln_nnzj)
     @views jac_nln_structure!(nlp.internal, rows[idx], cols[idx])
     rows[idx] .+= ne
   end
