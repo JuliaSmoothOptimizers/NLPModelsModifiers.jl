@@ -184,7 +184,7 @@ function NLPModels.hprod!(
   Hv::AbstractVector;
   obj_weight::Real = one(eltype(x)),
 )
-  increment!(nls, :neval_hess)
+  increment!(nls, :neval_hprod)
   cx = cons(nls.nlp, x)
   Jv = jprod(nls.nlp, x, v)
   jtprod!(nls.nlp, x, Jv, Hv)
