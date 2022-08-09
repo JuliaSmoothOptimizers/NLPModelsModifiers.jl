@@ -5,7 +5,7 @@ export SlackModel, SlackNLSModel
 
 Return the relative indices of the set of indices `jl` within the set of indices `ind`.
 """
-get_slack_ind(jl, ind) = filter(x -> !isnothing(x), indexin(jl, ind))
+get_slack_ind(jl, ind) = convert(Vector{Int}, filter(x -> !isnothing(x), indexin(jl, ind)))
 
 """
     get_relative_indices(model)
