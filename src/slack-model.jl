@@ -229,7 +229,6 @@ end
 function NLPModels.cons_lin!(nlp::SlackModels, x::AbstractVector, c::AbstractVector)
   @lencheck nlp.meta.nvar x
   @lencheck nlp.meta.nlin c
-  increment!(nlp, :neval_cons_lin)
   n = nlp.model.meta.nvar
   ns = nlp.meta.nvar - n
   jlow, jupp, jrng = nlp.jlow_lin, nlp.jupp_lin, nlp.jrng_lin
@@ -252,7 +251,6 @@ end
 function NLPModels.cons_nln!(nlp::SlackModels, x::AbstractVector, c::AbstractVector)
   @lencheck nlp.meta.nvar x
   @lencheck nlp.meta.nnln c
-  increment!(nlp, :neval_cons_nln)
   n = nlp.model.meta.nvar
   ns = nlp.meta.nvar - n
   jlow, jupp, jrng = nlp.jlow_nln, nlp.jupp_nln, nlp.jrng_nln
@@ -334,7 +332,6 @@ end
 function NLPModels.jac_lin_coord!(nlp::SlackModels, x::AbstractVector, vals::AbstractVector)
   @lencheck nlp.meta.nvar x
   @lencheck nlp.meta.lin_nnzj vals
-  increment!(nlp, :neval_jac_lin)
   n = nlp.model.meta.nvar
   lin_nnzj = nlp.model.meta.lin_nnzj
   if lin_nnzj > 0
@@ -347,7 +344,6 @@ end
 function NLPModels.jac_nln_coord!(nlp::SlackModels, x::AbstractVector, vals::AbstractVector)
   @lencheck nlp.meta.nvar x
   @lencheck nlp.meta.nln_nnzj vals
-  increment!(nlp, :neval_jac_nln)
   n = nlp.model.meta.nvar
   nln_nnzj = nlp.model.meta.nln_nnzj
   if nln_nnzj > 0
@@ -367,7 +363,6 @@ function NLPModels.jprod_lin!(
   #                     [vₛ]
   @lencheck nlp.meta.nvar x v
   @lencheck nlp.meta.nlin jv
-  increment!(nlp, :neval_jprod_lin)
   n = nlp.model.meta.nvar
   ns = nlp.meta.nvar - n
   @views jprod_lin!(nlp.model, x[1:n], v[1:n], jv)
@@ -399,7 +394,6 @@ function NLPModels.jprod_nln!(
   #                     [vₛ]
   @lencheck nlp.meta.nvar x v
   @lencheck nlp.meta.nnln jv
-  increment!(nlp, :neval_jprod_nln)
   n = nlp.model.meta.nvar
   ns = nlp.meta.nvar - n
   @views jprod_nln!(nlp.model, x[1:n], v[1:n], jv)
@@ -433,7 +427,6 @@ function NLPModels.jtprod_lin!(
   #           [ -I  ]     [  -v   ]
   @lencheck nlp.meta.nvar x jtv
   @lencheck nlp.meta.nlin v
-  increment!(nlp, :neval_jtprod_lin)
   n = nlp.model.meta.nvar
   jlow, jupp, jrng = nlp.jlow_lin, nlp.jupp_lin, nlp.jrng_lin
   nlow, nupp, nrng = length(jlow), length(jupp), length(jrng)
@@ -456,7 +449,6 @@ function NLPModels.jtprod_nln!(
   #           [ -I  ]     [  -v   ]
   @lencheck nlp.meta.nvar x jtv
   @lencheck nlp.meta.nnln v
-  increment!(nlp, :neval_jtprod_nln)
   n = nlp.model.meta.nvar
   jlow, jupp, jrng = nlp.jlow_nln, nlp.jupp_nln, nlp.jrng_nln
   nlow, nupp, nrng = length(jlow), length(jupp), length(jrng)
