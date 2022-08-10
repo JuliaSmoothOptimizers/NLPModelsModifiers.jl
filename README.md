@@ -32,5 +32,5 @@ See the [documentation](https://JuliaSmoothOptimizers.github.io/NLPModels.jl/dev
 ## Installation
 
 ```julia
-pkg> add NLPModels
+pkg> add NLPModelsModifiers
 ```
