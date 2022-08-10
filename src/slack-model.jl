@@ -417,6 +417,29 @@ function NLPModels.jprod_nln!(
   return jv
 end
 
+function NLPModels.jtprod!(
+  nlp::SlackModels,
+  x::AbstractVector,
+  v::AbstractVector,
+  jtv::AbstractVector,
+)
+  # J(X)ᵀ v = [J(x)ᵀ] v = [J(x)ᵀ v]
+  #           [ -I  ]     [  -v   ]
+  @lencheck nlp.meta.nvar x jtv
+  @lencheck nlp.meta.ncon v
+  n = nlp.model.meta.nvar
+  nlow = length(nlp.model.meta.jlow)
+  nupp = length(nlp.model.meta.jupp)
+  nrng = length(nlp.model.meta.jrng)
+  @views begin
+    jtprod!(nlp.model, x[1:n], v, jtv[1:n])
+    jtv[(n + 1):(n + nlow)] = -v[nlp.model.meta.jlow]
+    jtv[(n + nlow + 1):(n + nlow + nupp)] = -v[nlp.model.meta.jupp]
+    jtv[(n + nlow + nupp + 1):(nlp.meta.nvar)] = -v[nlp.model.meta.jrng]
+  end
+  return jtv
+end
+
 function NLPModels.jtprod_lin!(
   nlp::SlackModels,
   x::AbstractVector,
