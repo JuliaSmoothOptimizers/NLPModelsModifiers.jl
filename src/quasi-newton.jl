@@ -124,7 +124,8 @@ function NLPModels.hprod!(
   Hv::AbstractVector;
   kwargs...,
 )
-  @views mul!(Hv[1:(nlp.meta.nvar)], nlp.op, v)
+  @lencheck nlp.meta.nvar Hv x v
+  mul!(Hv, nlp.op, v)
   return Hv
 end
 
