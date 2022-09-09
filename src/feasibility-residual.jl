@@ -31,7 +31,7 @@ mutable struct FeasibilityResidual{T, S, M <: AbstractNLPModel{T, S}} <: Abstrac
   counters::NLSCounters
   nlp::M
 
-  y # pre-allocated vector of length nequ
+  y::S # pre-allocated vector of length nequ
 end
 
 function NLPModels.show_header(io::IO, nls::FeasibilityResidual)
