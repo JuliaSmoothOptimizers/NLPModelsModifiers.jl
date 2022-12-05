@@ -124,12 +124,12 @@ function NLPModels.cons_nln!(nlp::FeasibilityFormNLS, xr::AbstractVector, c::Abs
   @lencheck nlp.meta.nnln c
   increment!(nlp, :neval_cons_nln)
   n, m, ne = nlp.internal.meta.nvar, nlp.internal.meta.nnln, nlp.internal.nls_meta.nequ
-  x = @view xr[1:n]
-  r = @view xr[(n + 1):end]
-  residual!(nlp.internal, x, @view c[1:ne])
-  c[1:ne] .-= r
-  if m > 0
-    cons_nln!(nlp.internal, x, @view c[(ne + 1):end])
+  @views begin
+    residual!(nlp.internal, xr[1:n], c[1:ne])
+    c[1:ne] .-= xr[(n + 1):end]
+    if m > 0
+      cons_nln!(nlp.internal, xr[1:n], c[(ne + 1):end])
+    end
   end
   return c
 end
