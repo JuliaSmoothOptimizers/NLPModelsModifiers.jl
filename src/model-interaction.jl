@@ -34,8 +34,8 @@ function FeasibilityFormNLS(
     name = name,
   )
   nls_meta = NLSMeta{T, S}(nequ, nvar, x0 = x0, nnzj = nequ, nnzh = 0)
-
-  nlp = FeasibilityFormNLS{T, S, FeasibilityResidual{T, S}}(meta, nls_meta, nls, NLSCounters())
+  tmp = similar(nls.meta.x0)
+  nlp = FeasibilityFormNLS{T, S, FeasibilityResidual{T, S}}(meta, nls_meta, nls, NLSCounters(), tmp)
   finalizer(nlp -> finalize(nlp.internal), nlp)
 
   return nlp

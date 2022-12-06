@@ -27,6 +27,8 @@ mutable struct FeasibilityFormNLS{T, S, M <: AbstractNLSModel{T, S}} <: Abstract
   nls_meta::NLSMeta{T, S}
   internal::M
   counters::NLSCounters
+
+  tmp::S # pre-allocated vector of length nvar
 end
 
 function NLPModels.show_header(io::IO, nls::FeasibilityFormNLS)
@@ -84,7 +86,8 @@ function FeasibilityFormNLS(
   )
   nls_meta = NLSMeta{T, S}(nequ, nvar, x0 = x0, nnzj = nequ, nnzh = 0, lin = 1:nequ)
 
-  nlp = FeasibilityFormNLS{T, S, typeof(nls)}(meta, nls_meta, nls, NLSCounters())
+  tmp = similar(nls.meta.x0)
+  nlp = FeasibilityFormNLS{T, S, typeof(nls)}(meta, nls_meta, nls, NLSCounters(), tmp)
   finalizer(nlp -> finalize(nlp.internal), nlp)
 
   return nlp
@@ -239,12 +242,14 @@ function NLPModels.jtprod!(
   @lencheck nlp.meta.ncon v
   increment!(nlp, :neval_jtprod)
   n, m, ne = nlp.internal.meta.nvar, nlp.internal.meta.ncon, nlp.internal.nls_meta.nequ
-  x = @view xr[1:n]
-  @views jtprod_residual!(nlp.internal, x, v[1:ne], jtv[1:n])
-  if m > 0
-    @views jtv[1:n] .+= jtprod(nlp.internal, x, v[(ne + 1):end])
+  @views begin
+    jtprod_residual!(nlp.internal, xr[1:n], v[1:ne], jtv[1:n])
+    if m > 0
+      jtprod!(nlp.internal, xr[1:n], v[(ne + 1):end], nlp.tmp)
+      jtv[1:n] .+= nlp.tmp
+    end
+    jtv[(n + 1):end] .= .-v[1:ne]
   end
-  @views jtv[(n + 1):end] .= -v[1:ne]
   return jtv
 end
 
@@ -258,12 +263,14 @@ function NLPModels.jtprod_nln!(
   @lencheck nlp.meta.nnln v
   increment!(nlp, :neval_jtprod_nln)
   n, m, ne = nlp.internal.meta.nvar, nlp.internal.meta.nnln, nlp.internal.nls_meta.nequ
-  x = @view xr[1:n]
-  @views jtprod_residual!(nlp.internal, x, v[1:ne], jtv[1:n])
-  if m > 0
-    @views jtv[1:n] .+= jtprod_nln(nlp.internal, x, v[(ne + 1):end])
+  @views begin
+    jtprod_residual!(nlp.internal, xr[1:n], v[1:ne], jtv[1:n])
+    if m > 0
+      jtprod_nln!(nlp.internal, xr[1:n], v[(ne + 1):end], nlp.tmp)
+      jtv[1:n] .+= nlp.tmp
+    end
+    jtv[(n + 1):end] .= .-v[1:ne]
   end
-  @views jtv[(n + 1):end] .= -v[1:ne]
   return jtv
 end
 
@@ -333,26 +340,26 @@ end
 
 function NLPModels.hprod!(
   nlp::FeasibilityFormNLS,
-  xr::AbstractVector,
+  xr::AbstractVector{T},
   y::AbstractVector,
   v::AbstractVector,
   hv::AbstractVector;
-  obj_weight::Real = one(eltype(xr)),
-)
+  obj_weight::Real = one(T),
+) where {T}
   @lencheck nlp.meta.nvar xr v hv
   @lencheck nlp.meta.ncon y
   n, m, ne = nlp.internal.meta.nvar, nlp.internal.meta.ncon, nlp.internal.nls_meta.nequ
   x = @view xr[1:n]
-  T = eltype(xr)
   if m > 0
     @views hprod!(nlp.internal, x, y[(ne + 1):end], v[1:n], hv[1:n], obj_weight = zero(T))
   else
     fill!(hv, zero(T))
   end
   for i = 1:ne
-    @views hv[1:n] .+= hprod_residual(nlp.internal, x, i, v[1:n]) * y[i]
+    hprod_residual!(nlp.internal, x, i, v[1:n], nlp.tmp) 
+    @views hv[1:n] .+= nlp.tmp .* y[i]
   end
-  @views hv[(n + 1):end] .= obj_weight * v[(n + 1):end]
+  @views hv[(n + 1):end] .= obj_weight .* v[(n + 1):end]
   return hv
 end
 
