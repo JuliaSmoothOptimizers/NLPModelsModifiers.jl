@@ -296,6 +296,32 @@ function NLPModels.jac_lin_structure!(
   return rows, cols
 end
 
+"""
+    relative_columns_indices!(cols, nlp, nj, n, jlow, model_jlow)
+
+The input `jlow` should be relative indices within `nlp.model.meta.nln`.
+Add to `cols[nj .+ (1:length(jlow))]` the indices of `n + jind` with `jind` indices of `jlow` relative to `setdiff(nlp.model.meta.nln, nlp.model.meta.jfix)`.
+
+This is the 0-allocation version of:
+```
+ind = setdiff(nlp.model.meta.nln, nlp.model.meta.jfix)
+jlow_nln = get_slack_ind(nlp.model.meta.jlow, ind)
+cols[(nj + 1):(nj + lj)] .= (n .+ jlow_nln)
+```
+"""
+function relative_columns_indices!(cols::AbstractVector{<:Integer}, nlp::SlackModels, nj::Integer, n::Integer, jlow::AbstractVector{<:Integer}, model_jlow::AbstractVector{<:Integer})
+  k = 0 # number of jfix encountered
+  j = 0 # number of elements added
+  for i in nlp.model.meta.nln
+    if i in nlp.model.meta.jfix 
+      k += 1 
+    elseif i in model_jlow
+      j += 1
+      cols[nj + j] = n + jlow[j] - k
+    end
+  end # |j| = lj and |k| = length(nlp.model.meta.jfix)
+end
+
 function NLPModels.jac_nln_structure!(
   nlp::SlackModels,
   rows::AbstractVector{<:Integer},
@@ -307,22 +333,18 @@ function NLPModels.jac_nln_structure!(
   if nln_nnzj > 0
     @views jac_nln_structure!(nlp.model, rows[1:nln_nnzj], cols[1:nln_nnzj])
   end
-  ind = setdiff(nlp.model.meta.nln, nlp.model.meta.jfix)
   jlow, jupp, jrng = nlp.jlow_nln, nlp.jupp_nln, nlp.jrng_nln
   nslacklin = length(nlp.jlow_lin) + length(nlp.jupp_lin) + length(nlp.jrng_lin)
   n += nslacklin
   nj, lj = nln_nnzj, length(jlow)
   rows[(nj + 1):(nj + lj)] .= jlow
-  jlow_nln = get_slack_ind(nlp.model.meta.jlow, ind)
-  cols[(nj + 1):(nj + lj)] .= (n .+ jlow_nln)
+  relative_columns_indices!(cols, nlp, nj, n, jlow, nlp.model.meta.jlow)
   nj, lj = nj + lj, length(jupp)
   rows[(nj + 1):(nj + lj)] .= jupp
-  jupp_nln = get_slack_ind(nlp.model.meta.jupp, ind)
-  cols[(nj + 1):(nj + lj)] .= (n .+ jupp_nln)
+  relative_columns_indices!(cols, nlp, nj, n, jupp, nlp.model.meta.jupp)
   nj, lj = nj + lj, length(jrng)
   rows[(nj + 1):(nj + lj)] .= jrng
-  jrng_nln = get_slack_ind(nlp.model.meta.jrng, ind)
-  cols[(nj + 1):(nj + lj)] .= (n .+ jrng_nln)
+  relative_columns_indices!(cols, nlp, nj, n, jrng, nlp.model.meta.jrng)
 
   nslacknln = length(nlp.jlow_nln) + length(nlp.jupp_nln) + length(nlp.jrng_nln)
   cols[(nln_nnzj + 1):end] .= (n + 1):(n + nslacknln)
