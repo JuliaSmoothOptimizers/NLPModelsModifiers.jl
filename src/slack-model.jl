@@ -309,12 +309,19 @@ jlow_nln = get_slack_ind(nlp.model.meta.jlow, ind)
 cols[(nj + 1):(nj + lj)] .= (n .+ jlow_nln)
 ```
 """
-function relative_columns_indices!(cols::AbstractVector{<:Integer}, nlp::SlackModels, nj::Integer, n::Integer, jlow::AbstractVector{<:Integer}, model_jlow::AbstractVector{<:Integer})
+function relative_columns_indices!(
+  cols::AbstractVector{<:Integer},
+  nlp::SlackModels,
+  nj::Integer,
+  n::Integer,
+  jlow::AbstractVector{<:Integer},
+  model_jlow::AbstractVector{<:Integer},
+)
   k = 0 # number of jfix encountered
   j = 0 # number of elements added
   for i in nlp.model.meta.nln
-    if i in nlp.model.meta.jfix 
-      k += 1 
+    if i in nlp.model.meta.jfix
+      k += 1
     elseif i in model_jlow
       j += 1
       cols[nj + j] = n + jlow[j] - k
