@@ -455,35 +455,34 @@ function NLPModels.jtprod!(
   @lencheck nlp.meta.nvar x jtv
   @lencheck nlp.meta.ncon v
   n = nlp.model.meta.nvar
-  @views begin
-    jtprod!(nlp.model, x[1:n], v, jtv[1:n])
-    jtv[n + 1:end] .= zero(T) # Just for init purpose
+  @views jtprod!(nlp.model, x[1:n], v, jtv[1:n])
+  jtv[n + 1:end] .= zero(T) # Just for init purpose
 
-    jlow, jupp, jrng = nlp.jlow_lin, nlp.jupp_lin, nlp.jrng_lin
-    nlow, nupp, nrng = length(jlow), length(jupp), length(jrng)
-    for (i, k) in zip(jlow, 1:nlow)
-      jtv[n + k] = -v[nlp.meta.lin[i]]
-    end
-    for (i, k) in zip(jupp, 1:nupp)
-      jtv[n + nlow + k] = -v[nlp.meta.lin[i]]
-    end
-    for (i, k) in zip(jrng, 1:nrng)
-      jtv[n + nlow + nupp + k] = -v[nlp.meta.lin[i]]
-    end
-
-    n += nlow + nupp + nrng
-    jlow, jupp, jrng = nlp.jlow_nln, nlp.jupp_nln, nlp.jrng_nln
-    nlow, nupp, nrng = length(jlow), length(jupp), length(jrng)
-    for (i, k) in zip(jlow, 1:nlow)
-      jtv[n + k] = -v[nlp.meta.nln[i]]
-    end
-    for (i, k) in zip(jupp, 1:nupp)
-      jtv[n + nlow + k] = -v[nlp.meta.nln[i]]
-    end
-    for (i, k) in zip(jrng, 1:nrng)
-      jtv[n + nlow + nupp + k] = -v[nlp.meta.nln[i]]
-    end
+  jlow, jupp, jrng = nlp.jlow_lin, nlp.jupp_lin, nlp.jrng_lin
+  nlow, nupp, nrng = length(jlow), length(jupp), length(jrng)
+  for (i, k) in zip(jlow, 1:nlow)
+    jtv[n + k] = -v[nlp.meta.lin[i]]
   end
+  for (i, k) in zip(jupp, 1:nupp)
+    jtv[n + nlow + k] = -v[nlp.meta.lin[i]]
+  end
+  for (i, k) in zip(jrng, 1:nrng)
+    jtv[n + nlow + nupp + k] = -v[nlp.meta.lin[i]]
+  end
+
+  n += nlow + nupp + nrng
+  jlow, jupp, jrng = nlp.jlow_nln, nlp.jupp_nln, nlp.jrng_nln
+  nlow, nupp, nrng = length(jlow), length(jupp), length(jrng)
+  for (i, k) in zip(jlow, 1:nlow)
+    jtv[n + k] = -v[nlp.meta.nln[i]]
+  end
+  for (i, k) in zip(jupp, 1:nupp)
+    jtv[n + nlow + k] = -v[nlp.meta.nln[i]]
+  end
+  for (i, k) in zip(jrng, 1:nrng)
+    jtv[n + nlow + nupp + k] = -v[nlp.meta.nln[i]]
+  end
+
   return jtv
 end
 
