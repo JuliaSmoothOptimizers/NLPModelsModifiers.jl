@@ -446,6 +446,47 @@ function NLPModels.jprod_nln!(
   return jv
 end
 
+function NLPModels.jtprod!(
+  nlp::SlackModels,
+  x::AbstractVector{T},
+  v::AbstractVector,
+  jtv::AbstractVector,
+) where {T}
+  @lencheck nlp.meta.nvar x jtv
+  @lencheck nlp.meta.ncon v
+  n = nlp.model.meta.nvar
+  @views begin
+    jtprod!(nlp.model, x[1:n], v, jtv[1:n])
+    jtv[n + 1:end] .= zero(T) # Just for init purpose
+
+    jlow, jupp, jrng = nlp.jlow_lin, nlp.jupp_lin, nlp.jrng_lin
+    nlow, nupp, nrng = length(jlow), length(jupp), length(jrng)
+    for i in jlow
+      jtv[(n + 1):(n + nlow)] .= -v[nlp.meta.lin[i]]
+    end
+    for i in jupp
+      jtv[(n + nlow + 1):(n + nlow + nupp)] .= -v[nlp.meta.lin[i]]
+    end
+    for i in jrng
+      jtv[(n + nlow + nupp + 1):(n + nlow + nupp + nrng)] .= -v[nlp.meta.lin[i]]
+    end
+
+    n += nlow + nupp + nrng
+    jlow, jupp, jrng = nlp.jlow_nln, nlp.jupp_nln, nlp.jrng_nln
+    nlow, nupp, nrng = length(jlow), length(jupp), length(jrng)
+    for i in jlow
+      jtv[(n + 1):(n + nlow)] .= -v[nlp.meta.nln[i]]
+    end
+    for i in jupp
+      jtv[(n + nlow + 1):(n + nlow + nupp)] .= -v[nlp.meta.nln[i]]
+    end
+    for i in jrng
+      jtv[(n + nlow + nupp + 1):(n + nlow + nupp + nrng)] .= -v[nlp.meta.nln[i]]
+    end
+  end
+  return jtv
+end
+
 function NLPModels.jtprod_lin!(
   nlp::SlackModels,
   x::AbstractVector,
