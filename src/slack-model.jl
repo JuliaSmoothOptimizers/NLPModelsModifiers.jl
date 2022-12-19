@@ -456,7 +456,6 @@ function NLPModels.jtprod!(
   @lencheck nlp.meta.ncon v
   n = nlp.model.meta.nvar
   @views jtprod!(nlp.model, x[1:n], v, jtv[1:n])
-  jtv[n + 1:end] .= zero(T) # Just for init purpose
 
   jlow, jupp, jrng = nlp.jlow_lin, nlp.jupp_lin, nlp.jrng_lin
   nlow, nupp, nrng = length(jlow), length(jupp), length(jrng)
