@@ -101,23 +101,23 @@ function NLPModels.obj(nlp::FeasibilityFormNLS, x::AbstractVector)
   return dot(r, r) / 2
 end
 
-function NLPModels.grad!(nlp::FeasibilityFormNLS, x::AbstractVector, g::AbstractVector)
+function NLPModels.grad!(nlp::FeasibilityFormNLS, x::AbstractVector{T}, g::AbstractVector{T}) where {T}
   @lencheck nlp.meta.nvar x g
   increment!(nlp, :neval_grad)
   n = nlp.internal.meta.nvar
-  g[1:n] .= 0.0
+  g[1:n] .= zero(T)
   g[(n + 1):end] .= @view x[(n + 1):end]
   return g
 end
 
-function NLPModels.objgrad!(nlp::FeasibilityFormNLS, x::Array{Float64}, g::Array{Float64})
+function NLPModels.objgrad!(nlp::FeasibilityFormNLS, x::AbstractVector{T}, g::AbstractVector{T}) where {T}
   @lencheck nlp.meta.nvar x g
   increment!(nlp, :neval_obj)
   increment!(nlp, :neval_grad)
   n = nlp.internal.meta.nvar
   r = @view x[(n + 1):end]
   f = dot(r, r) / 2
-  g[1:n] .= 0.0
+  g[1:n] .= zero(T)
   g[(n + 1):end] .= @view x[(n + 1):end]
   return f, g
 end
