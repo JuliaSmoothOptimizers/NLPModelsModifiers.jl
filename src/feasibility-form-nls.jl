@@ -101,7 +101,11 @@ function NLPModels.obj(nlp::FeasibilityFormNLS, x::AbstractVector)
   return dot(r, r) / 2
 end
 
-function NLPModels.grad!(nlp::FeasibilityFormNLS, x::AbstractVector{T}, g::AbstractVector{T}) where {T}
+function NLPModels.grad!(
+  nlp::FeasibilityFormNLS,
+  x::AbstractVector{T},
+  g::AbstractVector{T},
+) where {T}
   @lencheck nlp.meta.nvar x g
   increment!(nlp, :neval_grad)
   n = nlp.internal.meta.nvar
@@ -110,7 +114,11 @@ function NLPModels.grad!(nlp::FeasibilityFormNLS, x::AbstractVector{T}, g::Abstr
   return g
 end
 
-function NLPModels.objgrad!(nlp::FeasibilityFormNLS, x::AbstractVector{T}, g::AbstractVector{T}) where {T}
+function NLPModels.objgrad!(
+  nlp::FeasibilityFormNLS,
+  x::AbstractVector{T},
+  g::AbstractVector{T},
+) where {T}
   @lencheck nlp.meta.nvar x g
   increment!(nlp, :neval_obj)
   increment!(nlp, :neval_grad)
@@ -356,7 +364,7 @@ function NLPModels.hprod!(
     fill!(hv, zero(T))
   end
   for i = 1:ne
-    hprod_residual!(nlp.internal, x, i, v[1:n], nlp.tmp) 
+    hprod_residual!(nlp.internal, x, i, v[1:n], nlp.tmp)
     @views hv[1:n] .+= nlp.tmp .* y[i]
   end
   @views hv[(n + 1):end] .= obj_weight .* v[(n + 1):end]
