@@ -32,6 +32,8 @@ mutable struct FeasibilityResidual{T, S, M <: AbstractNLPModel{T, S}} <: Abstrac
   nlp::M
 
   y::S # pre-allocated vector of length nequ
+  Hiv::S # pre-allocated vector of length nvar
+  Jvcx::S # pre-allocated vector of length nlp.meta.ncon
 end
 
 function NLPModels.show_header(io::IO, nls::FeasibilityResidual)
@@ -67,7 +69,9 @@ function FeasibilityResidual(
   )
   nls_meta = NLSMeta{T, S}(m, n, nnzj = nlp.meta.nnzj, nnzh = nlp.meta.nnzh, lin = nlp.meta.lin)
   y = similar(nlp.meta.x0, nls_meta.nequ)
-  nls = FeasibilityResidual(meta, nls_meta, NLSCounters(), nlp, y)
+  Hiv = similar(nlp.meta.x0)
+  Jvcx = similar(nlp.meta.x0, m)
+  nls = FeasibilityResidual(meta, nls_meta, NLSCounters(), nlp, y, Hiv, Jvcx)
   finalizer(nls -> finalize(nls.nlp), nls)
 
   return nls
@@ -181,19 +185,30 @@ function NLPModels.hess(
 end
 
 function NLPModels.hprod!(
-  nls::FeasibilityResidual,
+  nls::FeasibilityResidual{T},
   x::AbstractVector,
   v::AbstractVector,
   Hv::AbstractVector;
-  obj_weight::Real = one(eltype(x)),
-)
+  obj_weight::Real = one(T),
+) where {T}
   increment!(nls, :neval_hprod)
-  cx = cons(nls.nlp, x)
-  Jv = jprod(nls.nlp, x, v)
-  jtprod!(nls.nlp, x, Jv, Hv)
-  T = eltype(x)
-  Hiv = zeros(T, nls.meta.nvar)
-  hprod!(nls.nlp, x, cx, v, Hiv, obj_weight = zero(T))
+  return hprod!(nls, x, v, nls.Jvcx, nls.Hiv, Hv, obj_weight = obj_weight)
+end
+
+function NLPModels.hprod!(
+  nls::FeasibilityResidual,
+  x::AbstractVector{T},
+  v::AbstractVector,
+  Jvcx::AbstractVector,
+  Hiv::AbstractVector,
+  Hv::AbstractVector;
+  obj_weight::Real = one(T),
+) where {T}
+  increment!(nls, :neval_hprod)
+  jprod!(nls.nlp, x, v, Jvcx)
+  jtprod!(nls.nlp, x, Jvcx, Hv)
+  cons!(nls.nlp, x, Jvcx)
+  hprod!(nls.nlp, x, Jvcx, v, Hiv, obj_weight = zero(T))
   Hv .+= Hiv
   Hv .*= obj_weight
   return Hv
