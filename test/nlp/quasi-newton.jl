@@ -37,6 +37,7 @@
       @test obj(nlp, x) ≈ f(x)
       @test grad(nlp, x) ≈ ∇f(x)
       @test hprod(nlp, x, v) ≈ H(x) * v
+      @test nlp.model.counters.neval_hprod == 1
       @test cons(nlp, x) ≈ c(x)
       @test jac(nlp, x) ≈ J(x)
       @test jprod(nlp, x, v) ≈ J(x) * v
