@@ -106,10 +106,7 @@ NLPModels.jac_nln_structure!(
 
 # the following methods are affected by the Hessian approximation
 NLPModels.hess_op(nlp::QuasiNewtonModel, x::AbstractVector; kwargs...) = nlp.op
-function NLPModels.hprod(nlp::QuasiNewtonModel, x::AbstractVector, v::AbstractVector; kwargs...)
-  increment!(nlp, :neval_hprod)
-  return nlp.op * v
-end
+NLPModels.hprod(nlp::QuasiNewtonModel, x::AbstractVector, v::AbstractVector; kwargs...) = nlp.op * v
 
 function NLPModels.hprod!(
   nlp::QuasiNewtonModel,
@@ -129,10 +126,12 @@ function NLPModels.hprod!(
   kwargs...,
 )
   @lencheck nlp.meta.nvar Hv x v
-  increment!(nlp, :neval_hprod)
   mul!(Hv, nlp.op, v)
   return Hv
 end
+
+NLPModels.neval_hprod(nlp::LBFGSModel) = nlp.op.nprod
+NLPModels.neval_hprod(nlp::LSR1Model) = nlp.op.nprod
 
 function Base.push!(nlp::QuasiNewtonModel, args...)
   push!(nlp.op, args...)
