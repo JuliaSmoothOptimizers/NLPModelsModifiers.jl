@@ -29,6 +29,7 @@ mutable struct FeasibilityFormNLS{T, S, M <: AbstractNLSModel{T, S}} <: Abstract
   counters::NLSCounters
 
   tmp::S # pre-allocated vector of length nvar
+  tmpy::S # pre-allocated vector of length ncon
 end
 
 function NLPModels.show_header(io::IO, nls::FeasibilityFormNLS)
@@ -87,7 +88,8 @@ function FeasibilityFormNLS(
   nls_meta = NLSMeta{T, S}(nequ, nvar, x0 = x0, nnzj = nequ, nnzh = 0, lin = 1:nequ)
 
   tmp = similar(nls.meta.x0)
-  nlp = FeasibilityFormNLS{T, S, typeof(nls)}(meta, nls_meta, nls, NLSCounters(), tmp)
+  tmpy = similar(y0)
+  nlp = FeasibilityFormNLS{T, S, typeof(nls)}(meta, nls_meta, nls, NLSCounters(), tmp, tmpy)
   finalizer(nlp -> finalize(nlp.internal), nlp)
 
   return nlp
@@ -135,12 +137,15 @@ function NLPModels.cons_nln!(nlp::FeasibilityFormNLS, xr::AbstractVector, c::Abs
   @lencheck nlp.meta.nnln c
   increment!(nlp, :neval_cons_nln)
   n, m, ne = nlp.internal.meta.nvar, nlp.internal.meta.nnln, nlp.internal.nls_meta.nequ
-  @views begin
-    residual!(nlp.internal, xr[1:n], c[1:ne])
-    c[1:ne] .-= xr[(n + 1):end]
-    if m > 0
-      cons_nln!(nlp.internal, xr[1:n], c[(ne + 1):end])
-    end
+  @views residual!(nlp.internal, xr[1:n], nlp.tmpy[1:ne])
+  for i=1:ne
+    c[i] = nlp.tmpy[i] - xr[n + i]
+  end
+  if m > 0
+    @views cons_nln!(nlp.internal, xr[1:n], nlp.tmpy[(ne + 1):(nlp.meta.nnln)])
+  end
+  for i=(ne + 1):(nlp.meta.nnln)
+    c[i] = nlp.tmpy[i]
   end
   return c
 end
