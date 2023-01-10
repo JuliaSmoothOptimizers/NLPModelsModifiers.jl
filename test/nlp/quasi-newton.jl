@@ -37,7 +37,9 @@
       @test obj(nlp, x) ≈ f(x)
       @test grad(nlp, x) ≈ ∇f(x)
       @test hprod(nlp, x, v) ≈ H(x) * v
-      @test neval_hprod(nlp) == 1
+      @test neval_hprod(nlp.model) == 0
+      (QNM == LSR1Model) && (@test neval_hprod(nlp) == 2)
+      (QNM == LBFGSModel) && (@test neval_hprod(nlp) == 1)
       @test cons(nlp, x) ≈ c(x)
       @test jac(nlp, x) ≈ J(x)
       @test jprod(nlp, x, v) ≈ J(x) * v
