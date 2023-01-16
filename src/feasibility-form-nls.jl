@@ -170,7 +170,7 @@ function NLPModels.jac_nln_structure!(
   if m > 0
     idx = nnzjF .+ (1:(nlp.internal.meta.nln_nnzj))
     @views jac_nln_structure!(nlp.internal, rows[idx], cols[idx])
-    rows[idx] .+= ne
+    @views rows[idx] .+= ne
   end
   rows[(end - ne + 1):end] .= 1:ne
   cols[(end - ne + 1):end] .= n .+ (1:ne)
@@ -374,9 +374,23 @@ function NLPModels.hprod!(
     fill!(hv, zero(T))
   end
   for i = 1:ne
-    hprod_residual!(nlp.internal, x, i, v[1:n], nlp.tmp)
+    @views hprod_residual!(nlp.internal, x, i, v[1:n], nlp.tmp)
     @views hv[1:n] .+= nlp.tmp .* y[i]
   end
+  @views hv[(n + 1):end] .= obj_weight .* v[(n + 1):end]
+  return hv
+end
+
+function NLPModels.hprod!(
+  nlp::FeasibilityFormNLS,
+  xr::AbstractVector{T},
+  v::AbstractVector,
+  hv::AbstractVector;
+  obj_weight::Real = one(T),
+) where {T}
+  @lencheck nlp.meta.nvar xr v hv
+  n = nlp.internal.meta.nvar
+  fill!(hv, zero(T))
   @views hv[(n + 1):end] .= obj_weight .* v[(n + 1):end]
   return hv
 end
