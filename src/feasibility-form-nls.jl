@@ -223,10 +223,15 @@ function NLPModels.jprod_nln!(
   increment!(nlp, :neval_jprod_nln)
   n, m, ne = nlp.internal.meta.nvar, nlp.internal.meta.nnln, nlp.internal.nls_meta.nequ
   x = @view xr[1:n]
-  @views jprod_residual!(nlp.internal, x, v[1:n], jv[1:ne])
-  @views jv[1:ne] .-= v[(n + 1):end]
+  @views jprod_residual!(nlp.internal, x, v[1:n], nlp.tmpy[1:ne])
+  for i = 1:ne
+    jv[i] = nlp.tmpy[i] - v[n + i]
+  end
   if m > 0
-    @views jprod_nln!(nlp.internal, x, v[1:n], jv[(ne + 1):end])
+    @views jprod_nln!(nlp.internal, x, v[1:n], nlp.tmpy[(ne + 1):(nlp.meta.nnln)])
+    for i = (ne + 1):(nlp.meta.nnln)
+      jv[i] = nlp.tmpy[i]
+    end
   end
   return jv
 end
