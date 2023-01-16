@@ -138,13 +138,13 @@ function NLPModels.cons_nln!(nlp::FeasibilityFormNLS, xr::AbstractVector, c::Abs
   increment!(nlp, :neval_cons_nln)
   n, m, ne = nlp.internal.meta.nvar, nlp.internal.meta.nnln, nlp.internal.nls_meta.nequ
   @views residual!(nlp.internal, xr[1:n], nlp.tmpy[1:ne])
-  for i=1:ne
+  for i = 1:ne
     c[i] = nlp.tmpy[i] - xr[n + i]
   end
   if m > 0
     @views cons_nln!(nlp.internal, xr[1:n], nlp.tmpy[(ne + 1):(nlp.meta.nnln)])
   end
-  for i=(ne + 1):(nlp.meta.nnln)
+  for i = (ne + 1):(nlp.meta.nnln)
     c[i] = nlp.tmpy[i]
   end
   return c
