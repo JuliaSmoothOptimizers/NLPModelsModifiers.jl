@@ -130,7 +130,7 @@ function slack_meta(meta::AbstractNLPModelMeta{T, S}; name = meta.name * "-slack
 
   x0 = similar(meta.x0, meta.nvar + ns)
   x0[1:(meta.nvar)] .= meta.x0
-  x0[(meta.nvar):end] .= zero(T)
+  x0[(meta.nvar + 1):end] .= zero(T)
   return NLPModelMeta(
     meta.nvar + ns,
     x0 = x0,
@@ -175,7 +175,7 @@ function SlackNLSModel(
 
   meta = slack_meta(model.meta, name = name)
   x0 = similar(model.meta.x0, model.meta.nvar + ns)
-  x0[(model.meta.nvar):end] .= zero(T)
+  x0[(model.meta.nvar + 1):end] .= zero(T)
   x0[1:(model.meta.nvar)] .= model.meta.x0
   nls_meta = NLSMeta{T, S}(
     model.nls_meta.nequ,

@@ -8,6 +8,7 @@
     n = nls.meta.nvar
     m = nls.meta.ncon
     ne = nls_meta(nls).nequ
+    @test nls.meta.x0[1:2] == ones(T, 2)
 
     x = randn(T, n)
     v = randn(T, n)

@@ -10,6 +10,7 @@
     nlp = SlackModel(SimpleNLPModel(T, M))
     n = nlp.meta.nvar
     m = nlp.meta.ncon
+    @test nlp.meta.x0[1:2] == T[2; 2]
 
     x = randn(T, n)
     y = randn(T, m)
