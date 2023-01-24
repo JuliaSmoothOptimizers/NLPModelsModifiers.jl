@@ -50,6 +50,10 @@ qn_model = LSR1Model(nlp)
 check_qn_model(qn_model)
 qn_model = LSR1Model(nlp, mem = 2)
 check_qn_model(qn_model)
+qn_model = DiagonalQNModel(nlp)
+check_qn_model(qn_model)
+qn_model = SpectralGradientModel(nlp)
+check_qn_model(qn_model)
 
 @testset "objgrad of a qnmodel" begin
   struct OnlyObjgradModel <: AbstractNLPModel
