@@ -49,8 +49,7 @@
       @test grad(nlp, x) ≈ ∇f(x)
       @test hprod(nlp, x, v) ≈ H(x) * v
       @test neval_hprod(nlp.model) == 0
-      (QNM == LSR1Model) && (@test neval_hprod(nlp) == 2)
-      (QNM == LBFGSModel) && (@test neval_hprod(nlp) == 1)
+      (QNM == LSR1Model) ? (@test neval_hprod(nlp) == 2) : (@test neval_hprod(nlp) == 1)
       @test cons(nlp, x) ≈ c(x)
       @test jac(nlp, x) ≈ J(x)
       @test jprod(nlp, x, v) ≈ J(x) * v
@@ -126,13 +125,9 @@
       Hop = hess_op!(nlp, x, Hv)
       @test Hop * v ≈ H(x) * v
 
-      if QNO ∈ [LSR1Operator, LBFGSOperator]
-        # I am not sure reset! makes sense for the other QN operator since we have to give a value to initialize it
-        # we can add some default values in LinearOperators later if needed, but it is easier to simply update d / σ
-        reset_data!(nlp)
-        Hop = hess_op!(nlp, x, Hv)
-        @test Hop * v == v
-      end
+      reset_data!(nlp)
+      Hop = hess_op!(nlp, x, Hv)
+      @test Hop * v == v
     end
   end
 

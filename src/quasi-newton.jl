@@ -46,8 +46,11 @@ end
     DiagonalQNModel(nlp; d0 = fill!(S(undef, nlp.meta.nvar), 1.0), psb = false)
 
 Construct a `DiagonalQNModel` from another type of nlp.
-`d0` is the initial approximation of the diagonal of the Hessian.
-`psb = true` should be used to perform a PSB update (default: Andrei update). 
+`d0` is the initial approximation of the diagonal of the Hessian, and by default a vector of ones.
+`psb = true` should be used to perform a PSB update (default: Andrei update).
+See the
+[`DiagonalQN operator documentation`](https://juliasmoothoptimizers.github.io/LinearOperators.jl/stable/reference/#LinearOperators.DiagonalQN)
+for the choice of `psb` and more information about the used algorithms.
 """
 function DiagonalQNModel(
   nlp::AbstractNLPModel{T, S};
@@ -61,7 +64,11 @@ end
 """
     SpectralGradientModel(nlp; σ = 1.0)
 
-Construct a `SpectralGradientModel` from another type of nlp.
+Construct a `SpectralGradientModel` rhat approximates the Hessian as `σI` from another type of nlp.
+The keyword argument `σ` is the initial positive multiple of the identity.
+See the
+[`SpectralGradient operator documentation`](https://juliasmoothoptimizers.github.io/LinearOperators.jl/stable/reference/#LinearOperators.SpectralGradient)
+for more information about the used algorithms. 
 """
 function SpectralGradientModel(nlp::AbstractNLPModel{T, S}; σ::T = one(T)) where {T, S}
   op = SpectralGradient(σ, nlp.meta.nvar)
