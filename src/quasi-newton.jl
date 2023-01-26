@@ -2,44 +2,44 @@ export QuasiNewtonModel, LBFGSModel, LSR1Model, DiagonalQNModel, SpectralGradien
 
 abstract type QuasiNewtonModel{T, S} <: AbstractNLPModel{T, S} end
 
-mutable struct LBFGSModel{T, S, M <: AbstractNLPModel{T, S}, Meta <: AbstractNLPModelMeta{T, S}} <:
-               QuasiNewtonModel{T, S}
+mutable struct LBFGSModel{T, S, M <: AbstractNLPModel{T, S}, Meta <: AbstractNLPModelMeta{T, S},
+    Op <: LBFGSOperator{T}} <: QuasiNewtonModel{T, S}
   meta::Meta
   model::M
-  op::LBFGSOperator
+  op::Op
 end
 
-mutable struct LSR1Model{T, S, M <: AbstractNLPModel{T, S}, Meta <: AbstractNLPModelMeta{T, S}} <:
-               QuasiNewtonModel{T, S}
+mutable struct LSR1Model{T, S, M <: AbstractNLPModel{T, S}, Meta <: AbstractNLPModelMeta{T, S},
+    Op <: LSR1Operator{T}} <: QuasiNewtonModel{T, S}
   meta::Meta
   model::M
-  op::LSR1Operator
+  op::Op
 end
 
-mutable struct DiagonalQNModel{T, S, M <: AbstractNLPModel{T, S}, Meta <: AbstractNLPModelMeta{T, S}} <:
-               QuasiNewtonModel{T, S}
+mutable struct DiagonalQNModel{T, S, M <: AbstractNLPModel{T, S}, Meta <: AbstractNLPModelMeta{T, S},
+    Op <: DiagonalQN{T}} <: QuasiNewtonModel{T, S}
   meta::Meta
   model::M
-  op::DiagonalQN
+  op::Op
 end
 
-mutable struct SpectralGradientModel{T, S, M <: AbstractNLPModel{T, S}, Meta <: AbstractNLPModelMeta{T, S}} <:
-               QuasiNewtonModel{T, S}
+mutable struct SpectralGradientModel{T, S, M <: AbstractNLPModel{T, S}, Meta <: AbstractNLPModelMeta{T, S},
+    Op <: SpectralGradient{T}} <: QuasiNewtonModel{T, S}
   meta::Meta
   model::M
-  op::SpectralGradient
+  op::Op
 end
 
 "Construct a `LBFGSModel` from another type of model."
 function LBFGSModel(nlp::AbstractNLPModel{T, S}; kwargs...) where {T, S}
   op = LBFGSOperator(T, nlp.meta.nvar; kwargs...)
-  return LBFGSModel{T, S, typeof(nlp), typeof(nlp.meta)}(nlp.meta, nlp, op)
+  return LBFGSModel{T, S, typeof(nlp), typeof(nlp.meta), typeof(op)}(nlp.meta, nlp, op)
 end
 
 "Construct a `LSR1Model` from another type of nlp."
 function LSR1Model(nlp::AbstractNLPModel{T, S}; kwargs...) where {T, S}
   op = LSR1Operator(T, nlp.meta.nvar; kwargs...)
-  return LSR1Model{T, S, typeof(nlp), typeof(nlp.meta)}(nlp.meta, nlp, op)
+  return LSR1Model{T, S, typeof(nlp), typeof(nlp.meta), typeof(op)}(nlp.meta, nlp, op)
 end
 
 """
@@ -58,7 +58,7 @@ function DiagonalQNModel(
   psb::Bool = false,
 ) where {T, S}
   op = DiagonalQN(d0, psb)
-  return DiagonalQNModel{T, S, typeof(nlp), typeof(nlp.meta)}(nlp.meta, nlp, op)
+  return DiagonalQNModel{T, S, typeof(nlp), typeof(nlp.meta), typeof(op)}(nlp.meta, nlp, op)
 end
 
 """
@@ -72,7 +72,7 @@ for more information about the used algorithms.
 """
 function SpectralGradientModel(nlp::AbstractNLPModel{T, S}; σ::T = one(T)) where {T, S}
   op = SpectralGradient(σ, nlp.meta.nvar)
-  return SpectralGradientModel{T, S, typeof(nlp), typeof(nlp.meta)}(nlp.meta, nlp, op)
+  return SpectralGradientModel{T, S, typeof(nlp), typeof(nlp.meta), typeof(op)}(nlp.meta, nlp, op)
 end
 
 NLPModels.show_header(io::IO, nlp::QuasiNewtonModel) =
