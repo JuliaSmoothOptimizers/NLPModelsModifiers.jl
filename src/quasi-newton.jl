@@ -2,29 +2,49 @@ export QuasiNewtonModel, LBFGSModel, LSR1Model, DiagonalQNModel, SpectralGradien
 
 abstract type QuasiNewtonModel{T, S} <: AbstractNLPModel{T, S} end
 
-mutable struct LBFGSModel{T, S, M <: AbstractNLPModel{T, S}, Meta <: AbstractNLPModelMeta{T, S},
-    Op <: LBFGSOperator{T}} <: QuasiNewtonModel{T, S}
+mutable struct LBFGSModel{
+  T,
+  S,
+  M <: AbstractNLPModel{T, S},
+  Meta <: AbstractNLPModelMeta{T, S},
+  Op <: LBFGSOperator{T},
+} <: QuasiNewtonModel{T, S}
   meta::Meta
   model::M
   op::Op
 end
 
-mutable struct LSR1Model{T, S, M <: AbstractNLPModel{T, S}, Meta <: AbstractNLPModelMeta{T, S},
-    Op <: LSR1Operator{T}} <: QuasiNewtonModel{T, S}
+mutable struct LSR1Model{
+  T,
+  S,
+  M <: AbstractNLPModel{T, S},
+  Meta <: AbstractNLPModelMeta{T, S},
+  Op <: LSR1Operator{T},
+} <: QuasiNewtonModel{T, S}
   meta::Meta
   model::M
   op::Op
 end
 
-mutable struct DiagonalQNModel{T, S, M <: AbstractNLPModel{T, S}, Meta <: AbstractNLPModelMeta{T, S},
-    Op <: DiagonalQN{T}} <: QuasiNewtonModel{T, S}
+mutable struct DiagonalQNModel{
+  T,
+  S,
+  M <: AbstractNLPModel{T, S},
+  Meta <: AbstractNLPModelMeta{T, S},
+  Op <: DiagonalQN{T},
+} <: QuasiNewtonModel{T, S}
   meta::Meta
   model::M
   op::Op
 end
 
-mutable struct SpectralGradientModel{T, S, M <: AbstractNLPModel{T, S}, Meta <: AbstractNLPModelMeta{T, S},
-    Op <: SpectralGradient{T}} <: QuasiNewtonModel{T, S}
+mutable struct SpectralGradientModel{
+  T,
+  S,
+  M <: AbstractNLPModel{T, S},
+  Meta <: AbstractNLPModelMeta{T, S},
+  Op <: SpectralGradient{T},
+} <: QuasiNewtonModel{T, S}
   meta::Meta
   model::M
   op::Op

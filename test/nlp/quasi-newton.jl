@@ -10,11 +10,11 @@
     Jnln(x) = [-0.5x[1] -2.0x[2]]
 
     for (QNM, QNO) in [
-      (LSR1Model, LSR1Operator),
-      (LBFGSModel, LBFGSOperator),
-      (DiagonalQNModel, DiagonalQN),
-      (SpectralGradientModel, SpectralGradient),
-    ],
+        (LSR1Model, LSR1Operator),
+        (LBFGSModel, LBFGSOperator),
+        (DiagonalQNModel, DiagonalQN),
+        (SpectralGradientModel, SpectralGradient),
+      ],
       T in [Float64, Float32],
       M in [NLPModelMeta, SimpleNLPMeta]
 
