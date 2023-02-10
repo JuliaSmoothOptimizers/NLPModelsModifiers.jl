@@ -9,6 +9,14 @@
   )
   map(
     nlp -> NLPModelsTest.test_zero_allocations(nlp, linear_api = true, exclude = [hess]),
+    map(x -> DiagonalQNModel(eval(Symbol(x))()), NLPModelsTest.nlp_problems),
+  )
+  map(
+    nlp -> NLPModelsTest.test_zero_allocations(nlp, linear_api = true, exclude = [hess]),
+    map(x -> SpectralGradientModel(eval(Symbol(x))()), NLPModelsTest.nlp_problems),
+  )
+  map(
+    nlp -> NLPModelsTest.test_zero_allocations(nlp, linear_api = true, exclude = [hess]),
     map(x -> SlackModel(eval(Symbol(x))()), NLPModelsTest.nlp_problems),
   )
   problems = setdiff(NLPModelsTest.nlp_problems, ["BROWNDEN", "HS5"])
