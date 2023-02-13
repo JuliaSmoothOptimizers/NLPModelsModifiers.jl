@@ -42,12 +42,20 @@ end
     map(x -> SlackModel(eval(Symbol(x))()), NLPModelsTest.nlp_problems),
   )
   map(
-    nlp -> NLPModelsTest.test_zero_allocations(nlp, linear_api = true, exclude = [obj, grad, hess, hess_residual]),
-    map(x -> FeasibilityResidual(eval(Symbol(x))(), name = x * "feas"), setdiff(problems, ["MGH01"])),
+    nlp -> NLPModelsTest.test_zero_allocations(
+      nlp,
+      linear_api = true,
+      exclude = [obj, grad, hess, hess_residual],
+    ),
+    map(
+      x -> FeasibilityResidual(eval(Symbol(x))(), name = x * "feas"),
+      setdiff(problems, ["MGH01"]),
+    ),
   )
   # jtprod! https://github.com/JuliaSmoothOptimizers/NLPModelsModifiers.jl/issues/77
   map(
-    nlp -> NLPModelsTest.test_zero_allocations(nlp, linear_api = true, exclude = [hess, jtprod, jac_op]),
+    nlp ->
+      NLPModelsTest.test_zero_allocations(nlp, linear_api = true, exclude = [hess, jtprod, jac_op]),
     map(x -> FeasibilityFormNLS(eval(Symbol(x))()), problems),
   )
 end
