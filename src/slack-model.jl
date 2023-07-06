@@ -382,6 +382,19 @@ function NLPModels.jac_nln_coord!(nlp::SlackModels, x::AbstractVector, vals::Abs
   return vals
 end
 
+function NLPModels.jprod!(
+  nlp::SlackModels,
+  x::AbstractVector,
+  v::AbstractVector,
+  Jv::AbstractVector,
+)
+  @lencheck nlp.meta.nvar x v
+  @lencheck nlp.meta.ncon Jv
+  nlp.meta.nlin > 0 && jprod_lin!(nlp, x, v, view(Jv, nlp.meta.lin))
+  nlp.meta.nnln > 0 && jprod_nln!(nlp, x, v, view(Jv, nlp.meta.nln))
+  return Jv
+end
+
 function NLPModels.jprod_lin!(
   nlp::SlackModels,
   x::AbstractVector,
