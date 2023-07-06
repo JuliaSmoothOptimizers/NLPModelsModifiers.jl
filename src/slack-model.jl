@@ -226,7 +226,7 @@ function NLPModels.objgrad!(nlp::SlackModels, x::AbstractVector, g::AbstractVect
   return f, g
 end
 
-function cons!(nlp::SlackModels, x::AbstractVector, cx::AbstractVector)
+function NLPModels.cons!(nlp::SlackModels, x::AbstractVector, cx::AbstractVector)
   @lencheck nlp.meta.nvar x
   @lencheck nlp.meta.ncon cx
   nlp.meta.nlin > 0 && cons_lin!(nlp, x, view(cx, nlp.meta.lin))
