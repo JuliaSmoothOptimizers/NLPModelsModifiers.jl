@@ -49,7 +49,7 @@ end
     ),
     map(
       x -> FeasibilityResidual(eval(Symbol(x))(), name = x * "feas"),
-      setdiff(problems, ["MGH01"]),
+      setdiff(problems, ["MGH01", "BNDROSENBROCK"]),
     ),
   )
   # jtprod! https://github.com/JuliaSmoothOptimizers/NLPModelsModifiers.jl/issues/77
