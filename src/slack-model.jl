@@ -226,6 +226,15 @@ function NLPModels.objgrad!(nlp::SlackModels, x::AbstractVector, g::AbstractVect
   return f, g
 end
 
+function NLPModels.cons!(nlp::SlackModels, x::AbstractVector, cx::AbstractVector)
+  @lencheck nlp.meta.nvar x
+  @lencheck nlp.meta.ncon cx
+  increment!(nlp.model, :neval_cons)
+  nlp.meta.nlin > 0 && cons_lin!(nlp, x, view(cx, nlp.meta.lin))
+  nlp.meta.nnln > 0 && cons_nln!(nlp, x, view(cx, nlp.meta.nln))
+  return cx
+end
+
 function NLPModels.cons_lin!(nlp::SlackModels, x::AbstractVector, c::AbstractVector)
   @lencheck nlp.meta.nvar x
   @lencheck nlp.meta.nlin c
@@ -380,6 +389,20 @@ function NLPModels.jac_nln_coord!(nlp::SlackModels, x::AbstractVector, vals::Abs
   end
   vals[(nln_nnzj + 1):(nlp.meta.nln_nnzj)] .= -1
   return vals
+end
+
+function NLPModels.jprod!(
+  nlp::SlackModels,
+  x::AbstractVector,
+  v::AbstractVector,
+  Jv::AbstractVector,
+)
+  @lencheck nlp.meta.nvar x v
+  @lencheck nlp.meta.ncon Jv
+  increment!(nlp.model, :neval_jprod)
+  nlp.meta.nlin > 0 && jprod_lin!(nlp, x, v, view(Jv, nlp.meta.lin))
+  nlp.meta.nnln > 0 && jprod_nln!(nlp, x, v, view(Jv, nlp.meta.nln))
+  return Jv
 end
 
 function NLPModels.jprod_lin!(
