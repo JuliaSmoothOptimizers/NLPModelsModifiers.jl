@@ -1,4 +1,4 @@
-# NLPModelsModifiers.jl
+# NLPModelsModifiers
 
 This package provides optimization models based on [NLPModels](https://github.com/JuliaSmoothOptimizers/NLPModels.jl).
 The API can be found on their [documentation page](https://juliasmoothoptimizers.github.io/NLPModels.jl/dev/api).
