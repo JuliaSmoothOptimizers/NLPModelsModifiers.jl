@@ -229,6 +229,7 @@ end
 function NLPModels.cons!(nlp::SlackModels, x::AbstractVector, cx::AbstractVector)
   @lencheck nlp.meta.nvar x
   @lencheck nlp.meta.ncon cx
+  increment!(nlp.model, :neval_cons)
   nlp.meta.nlin > 0 && cons_lin!(nlp, x, view(cx, nlp.meta.lin))
   nlp.meta.nnln > 0 && cons_nln!(nlp, x, view(cx, nlp.meta.nln))
   return cx
@@ -398,6 +399,7 @@ function NLPModels.jprod!(
 )
   @lencheck nlp.meta.nvar x v
   @lencheck nlp.meta.ncon Jv
+  increment!(nlp.model, :neval_jprod)
   nlp.meta.nlin > 0 && jprod_lin!(nlp, x, v, view(Jv, nlp.meta.lin))
   nlp.meta.nnln > 0 && jprod_nln!(nlp, x, v, view(Jv, nlp.meta.nln))
   return Jv
