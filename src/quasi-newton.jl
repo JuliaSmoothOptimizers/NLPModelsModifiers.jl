@@ -1,5 +1,10 @@
-export QuasiNewtonModel,
-  LBFGSModel, LSR1Model, DiagonalPSBModel, DiagonalAndreiModel, SpectralGradientModel
+export AbstractDiagonalQNModel,
+  QuasiNewtonModel,
+  LBFGSModel,
+  LSR1Model,
+  DiagonalPSBModel,
+  DiagonalAndreiModel,
+  SpectralGradientModel
 
 abstract type QuasiNewtonModel{T, S} <: AbstractNLPModel{T, S} end
 abstract type AbstractDiagonalQNModel{T, S} <: QuasiNewtonModel{T, S} end
