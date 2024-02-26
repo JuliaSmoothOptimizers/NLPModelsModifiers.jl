@@ -197,10 +197,7 @@ function NLPModels.hprod!(
   return Hv
 end
 
-NLPModels.neval_hprod(nlp::LBFGSModel) = nlp.op.nprod
-NLPModels.neval_hprod(nlp::LSR1Model) = nlp.op.nprod
-NLPModels.neval_hprod(nlp::DiagonalQNModel) = nlp.op.nprod
-NLPModels.neval_hprod(nlp::SpectralGradientModel) = nlp.op.nprod
+NLPModels.neval_hprod(nlp::QuasiNewtonModel) = nlp.op.nprod
 
 function Base.push!(nlp::QuasiNewtonModel, args...)
   push!(nlp.op, args...)
