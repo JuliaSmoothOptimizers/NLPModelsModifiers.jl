@@ -1,4 +1,5 @@
-export QuasiNewtonModel, LBFGSModel, LSR1Model, DiagonalQNModel, SpectralGradientModel
+export QuasiNewtonModel,
+  LBFGSModel, LSR1Model, DiagonalPSBModel, DiagonalAndreiModel, SpectralGradientModel
 
 abstract type QuasiNewtonModel{T, S} <: AbstractNLPModel{T, S} end
 
@@ -31,7 +32,7 @@ mutable struct DiagonalQNModel{
   S,
   M <: AbstractNLPModel{T, S},
   Meta <: AbstractNLPModelMeta{T, S},
-  Op <: DiagonalQN{T},
+  Op <: AbstractDiagonalQuasiNewtonOperator{T},
 } <: QuasiNewtonModel{T, S}
   meta::Meta
   model::M
@@ -63,21 +64,36 @@ function LSR1Model(nlp::AbstractNLPModel{T, S}; kwargs...) where {T, S}
 end
 
 """
-    DiagonalQNModel(nlp; d0 = fill!(S(undef, nlp.meta.nvar), 1.0), psb = false)
+    DiagonalPSBModel(nlp; d0 = fill!(S(undef, nlp.meta.nvar), 1.0))
 
-Construct a `DiagonalQNModel` from another type of nlp.
+Construct a `DiagonalPSBModel` from another type of nlp, in which the Hessian is approximated
+via a diagonal PSB quasi-Newton operator.
 `d0` is the initial approximation of the diagonal of the Hessian, and by default a vector of ones.
-`psb = true` should be used to perform a PSB update (default: Andrei update).
 See the
-[`DiagonalQN operator documentation`](https://juliasmoothoptimizers.github.io/LinearOperators.jl/stable/reference/#LinearOperators.DiagonalQN)
-for the choice of `psb` and more information about the used algorithms.
+[`DiagonalPSB operator documentation`](https://juliasmoothoptimizers.github.io/LinearOperators.jl/stable/reference/#LinearOperators.DiagonalPSB).
 """
-function DiagonalQNModel(
+function DiagonalPSBModel(
   nlp::AbstractNLPModel{T, S};
   d0::S = fill!(S(undef, nlp.meta.nvar), one(T)),
-  psb::Bool = false,
 ) where {T, S}
-  op = DiagonalQN(d0, psb)
+  op = DiagonalPSB(d0)
+  return DiagonalQNModel{T, S, typeof(nlp), typeof(nlp.meta), typeof(op)}(nlp.meta, nlp, op)
+end
+
+"""
+    DiagonalAndreiModel(nlp; d0 = fill!(S(undef, nlp.meta.nvar), 1.0))
+
+Construct a `DiagonalAndreiModel` from another type of nlp, in which the Hessian is approximated
+via a diagonal Andrei quasi-Newton operator.
+`d0` is the initial approximation of the diagonal of the Hessian, and by default a vector of ones.
+See the
+[`DiagonalAndrei operator documentation`](https://juliasmoothoptimizers.github.io/LinearOperators.jl/stable/reference/#LinearOperators.DiagonalAndrei).
+"""
+function DiagonalAndreiModel(
+  nlp::AbstractNLPModel{T, S};
+  d0::S = fill!(S(undef, nlp.meta.nvar), one(T)),
+) where {T, S}
+  op = DiagonalAndrei(d0)
   return DiagonalQNModel{T, S, typeof(nlp), typeof(nlp.meta), typeof(op)}(nlp.meta, nlp, op)
 end
 
@@ -88,7 +104,7 @@ Construct a `SpectralGradientModel` rhat approximates the Hessian as `σI` from 
 The keyword argument `σ` is the initial positive multiple of the identity.
 See the
 [`SpectralGradient operator documentation`](https://juliasmoothoptimizers.github.io/LinearOperators.jl/stable/reference/#LinearOperators.SpectralGradient)
-for more information about the used algorithms. 
+for more information about the used algorithms.
 """
 function SpectralGradientModel(nlp::AbstractNLPModel{T, S}; σ::T = one(T)) where {T, S}
   op = SpectralGradient(σ, nlp.meta.nvar)
