@@ -2,6 +2,7 @@ export QuasiNewtonModel,
   LBFGSModel, LSR1Model, DiagonalPSBModel, DiagonalAndreiModel, SpectralGradientModel
 
 abstract type QuasiNewtonModel{T, S} <: AbstractNLPModel{T, S} end
+abstract type AbstractDiagonalQNModel{T, S} <: QuasiNewtonModel{T, S} end
 
 mutable struct LBFGSModel{
   T,
@@ -33,19 +34,7 @@ mutable struct DiagonalQNModel{
   M <: AbstractNLPModel{T, S},
   Meta <: AbstractNLPModelMeta{T, S},
   Op <: AbstractDiagonalQuasiNewtonOperator{T},
-} <: QuasiNewtonModel{T, S}
-  meta::Meta
-  model::M
-  op::Op
-end
-
-mutable struct SpectralGradientModel{
-  T,
-  S,
-  M <: AbstractNLPModel{T, S},
-  Meta <: AbstractNLPModelMeta{T, S},
-  Op <: SpectralGradient{T},
-} <: QuasiNewtonModel{T, S}
+} <: AbstractDiagonalQNModel{T, S}
   meta::Meta
   model::M
   op::Op
@@ -108,7 +97,7 @@ for more information about the used algorithms.
 """
 function SpectralGradientModel(nlp::AbstractNLPModel{T, S}; σ::T = one(T)) where {T, S}
   op = SpectralGradient(σ, nlp.meta.nvar)
-  return SpectralGradientModel{T, S, typeof(nlp), typeof(nlp.meta), typeof(op)}(nlp.meta, nlp, op)
+  return DiagonalQNModel{T, S, typeof(nlp), typeof(nlp.meta), typeof(op)}(nlp.meta, nlp, op)
 end
 
 NLPModels.show_header(io::IO, nlp::QuasiNewtonModel) =
@@ -216,7 +205,6 @@ end
 NLPModels.neval_hprod(nlp::LBFGSModel) = nlp.op.nprod
 NLPModels.neval_hprod(nlp::LSR1Model) = nlp.op.nprod
 NLPModels.neval_hprod(nlp::DiagonalQNModel) = nlp.op.nprod
-NLPModels.neval_hprod(nlp::SpectralGradientModel) = nlp.op.nprod
 
 function Base.push!(nlp::QuasiNewtonModel, args...)
   push!(nlp.op, args...)
