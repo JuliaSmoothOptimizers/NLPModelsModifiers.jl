@@ -9,7 +9,11 @@
   )
   map(
     nlp -> NLPModelsTest.test_zero_allocations(nlp, linear_api = true, exclude = [hess]),
-    map(x -> DiagonalQNModel(eval(Symbol(x))()), NLPModelsTest.nlp_problems),
+    map(x -> DiagonalPSBModel(eval(Symbol(x))()), NLPModelsTest.nlp_problems),
+  )
+  map(
+    nlp -> NLPModelsTest.test_zero_allocations(nlp, linear_api = true, exclude = [hess]),
+    map(x -> DiagonalAndreiModel(eval(Symbol(x))()), NLPModelsTest.nlp_problems),
   )
   map(
     nlp -> NLPModelsTest.test_zero_allocations(nlp, linear_api = true, exclude = [hess]),
