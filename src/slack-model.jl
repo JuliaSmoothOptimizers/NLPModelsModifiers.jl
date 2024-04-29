@@ -67,7 +67,7 @@ The slack variables are implicitly ordered as linear and then nonlinear, and
 ``c_L ≤ c(x) < ∞``, ``-∞ < c(x) ≤ c_U`` and
 ``c_L ≤ c(x) ≤ c_U``, respectively.
 """
-mutable struct SlackModel{T, S, M <: AbstractNLPModel{T, S}} <: AbstractNLPModel{T, S}
+mutable struct SlackModel{T, S, M <: AbstractNLPModel{T}} <: AbstractNLPModel{T, S}
   meta::NLPModelMeta{T, S}
   model::M
 
@@ -90,7 +90,7 @@ end
 
 """Like `SlackModel`, this model converts inequalities into equalities and bounds.
 """
-mutable struct SlackNLSModel{T, S, M <: AbstractNLPModel{T, S}} <: AbstractNLSModel{T, S}
+mutable struct SlackNLSModel{T, S, M <: AbstractNLPModel{T}} <: AbstractNLSModel{T, S}
   meta::NLPModelMeta{T, S}
   nls_meta::NLSMeta{T, S}
   model::M
@@ -177,7 +177,7 @@ function SlackNLSModel(
   x0 = similar(model.meta.x0, model.meta.nvar + ns)
   x0[(model.meta.nvar + 1):end] .= zero(T)
   x0[1:(model.meta.nvar)] .= model.meta.x0
-  nls_meta = NLSMeta{T, S}(
+  nls_meta = NLSMeta{T, typeof(meta.x0)}( # might differ from S
     model.nls_meta.nequ,
     model.meta.nvar + ns,
     x0 = x0,

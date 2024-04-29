@@ -17,8 +17,9 @@ NLPModels = "0.19, 0.20, 0.21"
 julia = "^1.6.0"
 
 [extras]
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 NLPModelsTest = "7998695d-6960-4d3a-85c4-e1bceb8cd856"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["NLPModelsTest", "Test"]
+test = ["CUDA", "NLPModelsTest", "Test"]

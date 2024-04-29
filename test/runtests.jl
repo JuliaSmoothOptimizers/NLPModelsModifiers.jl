@@ -10,7 +10,11 @@ include("nls/feasibility-form-nls.jl")
 include("nls/feasibility-residual.jl")
 include("nls/slack-model.jl")
 
-using NLPModelsTest
+using CUDA, NLPModelsTest
+
+if CUDA.functional()
+  include("gpu_test.jl")
+end
 
 if (v"1.7" <= VERSION)
   include("allocs_test.jl")
