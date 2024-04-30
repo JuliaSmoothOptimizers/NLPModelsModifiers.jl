@@ -57,8 +57,7 @@ end
     ),
   )
   map(
-    nlp ->
-      NLPModelsTest.test_zero_allocations(nlp, linear_api = true, exclude = [hess]),
+    nlp -> NLPModelsTest.test_zero_allocations(nlp, linear_api = true, exclude = [hess]),
     map(x -> FeasibilityFormNLS(eval(Symbol(x))()), problems),
   )
 end
