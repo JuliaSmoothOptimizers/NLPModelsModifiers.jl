@@ -17,7 +17,6 @@ mutable struct LBFGSModel{
   Op <: LBFGSOperator{T},
 } <: QuasiNewtonModel{T, S}
   meta::Meta
-  counters::Counters
   model::M
   op::Op
 end
@@ -30,7 +29,6 @@ mutable struct LSR1Model{
   Op <: LSR1Operator{T},
 } <: QuasiNewtonModel{T, S}
   meta::Meta
-  counters::Counters
   model::M
   op::Op
 end
@@ -43,7 +41,6 @@ mutable struct DiagonalQNModel{
   Op <: AbstractDiagonalQuasiNewtonOperator{T},
 } <: AbstractDiagonalQNModel{T, S}
   meta::Meta
-  counters::Counters
   model::M
   op::Op
 end
@@ -51,13 +48,13 @@ end
 "Construct a `LBFGSModel` from another type of model."
 function LBFGSModel(nlp::AbstractNLPModel{T, S}; kwargs...) where {T, S}
   op = LBFGSOperator(T, nlp.meta.nvar; kwargs...)
-  return LBFGSModel{T, S, typeof(nlp), typeof(nlp.meta), typeof(op)}(nlp.meta, nlp.counters, nlp, op)
+  return LBFGSModel{T, S, typeof(nlp), typeof(nlp.meta), typeof(op)}(nlp.meta, nlp, op)
 end
 
 "Construct a `LSR1Model` from another type of nlp."
 function LSR1Model(nlp::AbstractNLPModel{T, S}; kwargs...) where {T, S}
   op = LSR1Operator(T, nlp.meta.nvar; kwargs...)
-  return LSR1Model{T, S, typeof(nlp), typeof(nlp.meta), typeof(op)}(nlp.meta, nlp.counters ,nlp, op)
+  return LSR1Model{T, S, typeof(nlp), typeof(nlp.meta), typeof(op)}(nlp.meta, nlp, op)
 end
 
 """
@@ -74,7 +71,7 @@ function DiagonalPSBModel(
   d0::S = fill!(S(undef, nlp.meta.nvar), one(T)),
 ) where {T, S}
   op = DiagonalPSB(d0)
-  return DiagonalQNModel{T, S, typeof(nlp), typeof(nlp.meta), typeof(op)}(nlp.meta, nlp.counters, nlp, op)
+  return DiagonalQNModel{T, S, typeof(nlp), typeof(nlp.meta), typeof(op)}(nlp.meta, nlp, op)
 end
 
 """
@@ -91,7 +88,7 @@ function DiagonalAndreiModel(
   d0::S = fill!(S(undef, nlp.meta.nvar), one(T)),
 ) where {T, S}
   op = DiagonalAndrei(d0)
-  return DiagonalQNModel{T, S, typeof(nlp), typeof(nlp.meta), typeof(op)}(nlp.meta, nlp.counters, nlp, op)
+  return DiagonalQNModel{T, S, typeof(nlp), typeof(nlp.meta), typeof(op)}(nlp.meta, nlp, op)
 end
 
 """
@@ -105,7 +102,7 @@ for more information about the used algorithms.
 """
 function SpectralGradientModel(nlp::AbstractNLPModel{T, S}; σ::T = one(T)) where {T, S}
   op = SpectralGradient(σ, nlp.meta.nvar)
-  return DiagonalQNModel{T, S, typeof(nlp), typeof(nlp.meta), typeof(op)}(nlp.meta, nlp.counters, nlp, op)
+  return DiagonalQNModel{T, S, typeof(nlp), typeof(nlp.meta), typeof(op)}(nlp.meta, nlp, op)
 end
 
 NLPModels.show_header(io::IO, nlp::QuasiNewtonModel) =
@@ -118,6 +115,7 @@ function Base.show(io::IO, nlp::QuasiNewtonModel)
 end
 
 @default_counters QuasiNewtonModel model
+@default_counters AbstractDiagonalQNModel model
 
 function NLPModels.reset_data!(nlp::QuasiNewtonModel)
   reset!(nlp.op)
