@@ -125,7 +125,8 @@
       @test Hop * v ≈ H(x) * v
       Hop = hess_op!(nlp, x, Hv)
       @test Hop * v ≈ H(x) * v
-
+      @test nlp.counters == nlp.model.counters
+      
       reset_data!(nlp)
       Hop = hess_op!(nlp, x, Hv)
       @test Hop * v == v
