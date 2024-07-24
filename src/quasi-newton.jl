@@ -114,8 +114,15 @@ function Base.show(io::IO, nlp::QuasiNewtonModel)
   show(io, nlp.model.counters)
 end
 
+function Base.getproperty(nlp::QuasiNewtonModel, s::Symbol)
+  if s == :counters
+    return nlp.model.counters
+  else 
+    return getfield(nlp, s)
+  end
+end
+
 @default_counters QuasiNewtonModel model
-@default_counters AbstractDiagonalQNModel model
 
 function NLPModels.reset_data!(nlp::QuasiNewtonModel)
   reset!(nlp.op)
