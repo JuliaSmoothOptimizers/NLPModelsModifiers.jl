@@ -126,6 +126,10 @@
       Hop = hess_op!(nlp, x, Hv)
       @test Hop * v ≈ H(x) * v
       @test nlp.counters == nlp.model.counters
+       @test neval_obj(nlp) == neval_obj(nlp.model)
+      @test neval_grad(nlp) == neval_grad(nlp.model)
+      @test neval_hess(nlp) == neval_hess(nlp.model)
+      @test neval_hprod(nlp) == neval_hprod(nlp.model)
       
       reset_data!(nlp)
       Hop = hess_op!(nlp, x, Hv)
