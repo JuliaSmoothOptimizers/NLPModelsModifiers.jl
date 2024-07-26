@@ -1,6 +1,6 @@
 export ScaledModel
 
-struct IpoptScaling{T}
+struct ConservativeScaling{T}
   max_gradient::T
 end
 
@@ -22,7 +22,7 @@ function _set_jacobian_scaling!(Jx, Ji, Jj, cons)
   end
 end
 
-function scale_model!(scaling::IpoptScaling{T}, nlp) where T
+function scale_model!(scaling::ConservativeScaling{T}, nlp) where T
   n, m = NLPModels.get_nvar(nlp), NLPModels.get_ncon(nlp)
   nnzj = NLPModels.get_nnzj(nlp)
   x0 = NLPModels.get_x0(nlp)
@@ -44,23 +44,22 @@ end
 Scale the nonlinear program
 ```math
 \begin{aligned}
-       min_x  \quad & f(x)\\
-\mathrm{s.t.} \quad &  c♭ ≤ c(x) ≤ c♯ \\
-                    & x ≥ 0
+       min_x  \quad &  f(x)\\
+\mathrm{s.t.} \quad &  c_L ≤ c(x) ≤ c_U,\\
+                    &  ℓ ≤ x ≥ u,
 \end{aligned}
 ```
 as
 ```math
 \begin{aligned}
-       min_x  \quad & σf . f(x)\\
-\mathrm{s.t.} \quad &  σc . c♭ ≤ σc . c(x) ≤ σc . c♯ \\
-                    & x ≥ 0
+       min_x  \quad &  σf . f(x)\\
+\mathrm{s.t.} \quad &  σc . c_L ≤ σc . c(x) ≤ σc . c_U, \\
+                    &  ℓ ≤ x ≥ u,
 \end{aligned}
 ```
-with ``σf`` a scalar defined as
+with ``σf`` a positive scalar defined as
 ```
 σf = min(1, max_gradient / norm(g0, Inf))
-
 ```
 and ``σc`` a vector whose size is equal to the number of constraints in the model.
 For ``i=1, ..., m``,
@@ -71,6 +70,7 @@ For ``i=1, ..., m``,
 
 The vector ``g0 = ∇f(x0)`` and the matrix ``J0 = ∇c(x0)`` are resp.
 the gradient and the Jacobian evaluated at the initial point ``x0``.
+By default, the threshold parameter `max_gradient` is set to 100.0.
 
 """
 struct ScaledModel{T, S, M} <: NLPModels.AbstractNLPModel{T, S}
@@ -83,13 +83,9 @@ struct ScaledModel{T, S, M} <: NLPModels.AbstractNLPModel{T, S}
   buffer_cons::S  # [size m]
 end
 
-NLPModels.show_header(io::IO, nlp::ScaledModel) =
-  println(io, "ScaledModel - Model with scaled objective and constraints")
-
-
 function ScaledModel(
     nlp::NLPModels.AbstractNLPModel{T, S};
-    scaling=IpoptScaling(T(100)),
+    scaling=ConservativeScaling(T(100)),
 ) where {T, S}
   n, m = NLPModels.get_nvar(nlp), NLPModels.get_ncon(nlp)
   x0 = NLPModels.get_x0(nlp)
@@ -106,7 +102,8 @@ function ScaledModel(
     ncon=m,
     lcon=NLPModels.get_lcon(nlp) .* scaling_cons,
     ucon=NLPModels.get_ucon(nlp) .* scaling_cons,
-    minimize=true,
+    minimize=nlp.meta.minimize,
+    name="scaled-" * nlp.meta.name,
   )
 
   return ScaledModel(
