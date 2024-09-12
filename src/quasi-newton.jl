@@ -4,7 +4,8 @@ export AbstractDiagonalQNModel,
   LSR1Model,
   DiagonalPSBModel,
   DiagonalAndreiModel,
-  SpectralGradientModel
+  SpectralGradientModel,
+  DiagonalBFGSModel
 
 abstract type QuasiNewtonModel{T, S} <: AbstractNLPModel{T, S} end
 abstract type AbstractDiagonalQNModel{T, S} <: QuasiNewtonModel{T, S} end
@@ -103,6 +104,14 @@ for more information about the used algorithms.
 function SpectralGradientModel(nlp::AbstractNLPModel{T, S}; σ::T = one(T)) where {T, S}
   op = SpectralGradient(σ, nlp.meta.nvar)
   return DiagonalQNModel{T, S, typeof(nlp), typeof(nlp.meta), typeof(op)}(nlp.meta, nlp, op)
+end
+
+function DiagonalBFGSModel(
+  nlp::AbstractNLPModel{T, S};
+  d0::S = fill!(S(undef, nlp.meta.nvar), one(T)),
+) where {T, S}
+  op = DiagonalBFGS(d0)
+  return NLPModelsModifiers.DiagonalQNModel{T, S, typeof(nlp), typeof(nlp.meta), typeof(op)}(nlp.meta, nlp, op)
 end
 
 NLPModels.show_header(io::IO, nlp::QuasiNewtonModel) =
