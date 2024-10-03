@@ -4,6 +4,7 @@ using LinearOperators, NLPModels, NLPModelsModifiers
 include("nlp/simple-model.jl")
 include("nlp/quasi-newton.jl")
 include("nlp/slack-model.jl")
+include("nlp/scaled-model.jl")
 
 include("nls/simple-model.jl")
 include("nls/feasibility-form-nls.jl")
