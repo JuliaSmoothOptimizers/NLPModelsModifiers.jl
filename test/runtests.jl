@@ -19,8 +19,3 @@ end
 if (v"1.7" <= VERSION)
   include("allocs_test.jl")
 end
-
-# include("test_feasibility_form_nls.jl")
-# include("test_feasibility_nls_model.jl")
-# include("test_qn_model.jl")
-# include("test_slack_model.jl")

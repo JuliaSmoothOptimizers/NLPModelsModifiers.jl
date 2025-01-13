@@ -131,6 +131,15 @@ function slack_meta(meta::AbstractNLPModelMeta{T, S}; name = meta.name * "-slack
   x0 = similar(meta.x0, meta.nvar + ns)
   x0[1:(meta.nvar)] .= meta.x0
   x0[(meta.nvar + 1):end] .= zero(T)
+
+  if (length(x0) != length(lvar)) && any((meta.lcon .== -Inf) .& (meta.ucon .== Inf))
+    throw(
+      error(
+        "NLPModels with constraints of the form -∞ ≤ cᵢ(x) ≤ ∞ are not supported by slack models.",
+      ),
+    )
+  end
+
   return NLPModelMeta{T, S}(
     meta.nvar + ns,
     x0 = x0,
