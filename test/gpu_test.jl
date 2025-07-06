@@ -50,7 +50,7 @@ end
   )
 end
 
-@testset "Check GPU multiprecision for model modifiers $M of NLP" for M in [SlackModel]
+@testset "Check GPU multiprecision for model modifiers $M of NLP" for M in [NoFixedModel, SlackModel]
   map(p -> nlp_gpu_tests(p, M, exclude = []), NLPModelsTest.nlp_problems)
 end
 
