@@ -157,6 +157,8 @@
               nnzh: ( 40.00% sparsity)   6               linear: ████⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 1
                                                       nonlinear: █████████████████⋅⋅⋅ 5
                                                            nnzj: ( 45.83% sparsity)   13
+                                                       lin_nnzj: ( 50.00% sparsity)   2
+                                                       nln_nnzj: ( 45.00% sparsity)   11
 
     Counters:
                obj: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0                 grad: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0                 cons: ⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅⋅ 0     
