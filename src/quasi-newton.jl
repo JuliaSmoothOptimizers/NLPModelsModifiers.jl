@@ -19,6 +19,7 @@ mutable struct LBFGSModel{
   meta::Meta
   model::M
   op::Op
+  v::S  # extra vector to compute and store yₖ = ∇fₖ₊₁ - ∇fₖ
 end
 
 mutable struct LSR1Model{
@@ -31,6 +32,7 @@ mutable struct LSR1Model{
   meta::Meta
   model::M
   op::Op
+  v::S  # extra vector to compute and store yₖ = ∇fₖ₊₁ - ∇fₖ
 end
 
 mutable struct DiagonalQNModel{
@@ -48,13 +50,15 @@ end
 "Construct a `LBFGSModel` from another type of model."
 function LBFGSModel(nlp::AbstractNLPModel{T, S}; kwargs...) where {T, S}
   op = LBFGSOperator(T, nlp.meta.nvar; kwargs...)
-  return LBFGSModel{T, S, typeof(nlp), typeof(nlp.meta), typeof(op)}(nlp.meta, nlp, op)
+  v = similar(nlp.meta.x0)
+  return LBFGSModel{T, S, typeof(nlp), typeof(nlp.meta), typeof(op)}(nlp.meta, nlp, op, v)
 end
 
 "Construct a `LSR1Model` from another type of nlp."
 function LSR1Model(nlp::AbstractNLPModel{T, S}; kwargs...) where {T, S}
   op = LSR1Operator(T, nlp.meta.nvar; kwargs...)
-  return LSR1Model{T, S, typeof(nlp), typeof(nlp.meta), typeof(op)}(nlp.meta, nlp, op)
+  v = similar(nlp.meta.x0)
+  return LSR1Model{T, S, typeof(nlp), typeof(nlp.meta), typeof(op)}(nlp.meta, nlp, op, v)
 end
 
 """
