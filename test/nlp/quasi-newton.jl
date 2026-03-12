@@ -49,7 +49,7 @@
       @test obj(nlp, x) ≈ f(x)
       @test grad(nlp, x) ≈ ∇f(x)
       @test hprod(nlp, x, v) ≈ H(x) * v
-      @test neval_hprod(nlp.model) == 0
+      @test neval_hprod(get_model(nlp)) == 0
       (QNM == LSR1Model) ? (@test neval_hprod(nlp) == 2) : (@test neval_hprod(nlp) == 1)
       @test cons(nlp, x) ≈ c(x)
       @test jac(nlp, x) ≈ J(x)
@@ -130,6 +130,26 @@
       Hop = hess_op!(nlp, x, Hv)
       @test Hop * v == v
     end
+  end
+
+  @testset "Getters" begin
+    mutable struct CustomQNModel{T, S, M <: AbstractNLPModel{T, S}} <: QuasiNewtonModel{T, S}
+      sub_model::M
+      my_op::LBFGSOperator{T}
+    end
+
+    nlp = SimpleNLPModel(Float64, SimpleNLPMeta)
+    lbfgs = LBFGSOperator(Float64, get_nvar(nlp), mem = 10)
+    qn = CustomQNModel(nlp, lbfgs)
+
+    @test_throws ErrorException get_model(qn)
+    @test_throws ErrorException get_op(qn)
+
+    NLPModelsModifiers.get_model(qn::CustomQNModel) = qn.sub_model
+    NLPModelsModifiers.get_op(qn::CustomQNModel) = qn.my_op
+
+    @test typeof(get_model(qn)) == typeof(nlp)
+    @test typeof(get_op(qn)) == typeof(lbfgs)
   end
 
   @testset "Show" begin

@@ -4,10 +4,30 @@ export AbstractDiagonalQNModel,
   LSR1Model,
   DiagonalPSBModel,
   DiagonalAndreiModel,
-  SpectralGradientModel
+  SpectralGradientModel,
+  get_model,
+  get_op
 
 abstract type QuasiNewtonModel{T, S} <: AbstractNLPModel{T, S} end
 abstract type AbstractDiagonalQNModel{T, S} <: QuasiNewtonModel{T, S} end
+
+"""
+    get_model(nlp::QuasiNewtonModel)
+
+Return the underlying model of a `QuasiNewtonModel`.
+"""
+function get_model(nlp::QuasiNewtonModel)
+  error("get_model is not implemented for $(typeof(nlp)).")
+end
+
+"""
+    get_op(nlp::QuasiNewtonModel)
+
+Return the quasi-Newton operator of a `QuasiNewtonModel`.
+"""
+function get_op(nlp::QuasiNewtonModel)
+  error("get_op is not implemented for $(typeof(nlp)).")
+end
 
 mutable struct LBFGSModel{
   T,
@@ -22,6 +42,11 @@ mutable struct LBFGSModel{
   v::S  # extra vector to compute and store yₖ = ∇fₖ₊₁ - ∇fₖ
 end
 
+get_model(nlp::LBFGSModel) = nlp.model
+get_op(nlp::LBFGSModel) = nlp.op
+@default_counters LBFGSModel model (neval_hprod,)
+NLPModels.neval_hprod(nlp::LBFGSModel) = get_op(nlp).nprod
+
 mutable struct LSR1Model{
   T,
   S,
@@ -35,6 +60,11 @@ mutable struct LSR1Model{
   v::S  # extra vector to compute and store yₖ = ∇fₖ₊₁ - ∇fₖ
 end
 
+get_model(nlp::LSR1Model) = nlp.model
+get_op(nlp::LSR1Model) = nlp.op
+@default_counters LSR1Model model (neval_hprod,)
+NLPModels.neval_hprod(nlp::LSR1Model) = get_op(nlp).nprod
+
 mutable struct DiagonalQNModel{
   T,
   S,
@@ -46,6 +76,11 @@ mutable struct DiagonalQNModel{
   model::M
   op::Op
 end
+
+get_model(nlp::DiagonalQNModel) = nlp.model
+get_op(nlp::DiagonalQNModel) = nlp.op
+@default_counters DiagonalQNModel model (neval_hprod,)
+NLPModels.neval_hprod(nlp::DiagonalQNModel) = get_op(nlp).nprod
 
 "Construct a `LBFGSModel` from another type of model."
 function LBFGSModel(nlp::AbstractNLPModel{T, S}; kwargs...) where {T, S}
@@ -115,13 +150,11 @@ NLPModels.show_header(io::IO, nlp::QuasiNewtonModel) =
 function Base.show(io::IO, nlp::QuasiNewtonModel)
   show_header(io, nlp)
   show(io, nlp.meta)
-  show(io, nlp.model.counters)
+  show(io, get_model(nlp).counters)
 end
 
-@default_counters QuasiNewtonModel model
-
 function NLPModels.reset_data!(nlp::QuasiNewtonModel)
-  reset!(nlp.op)
+  reset!(get_op(nlp))
   return nlp
 end
 
@@ -139,7 +172,7 @@ for meth in (
   :jac_lin,
   :jac_nln,
 )
-  @eval NLPModels.$meth(nlp::QuasiNewtonModel, x::AbstractVector) = $meth(nlp.model, x)
+  @eval NLPModels.$meth(nlp::QuasiNewtonModel, x::AbstractVector) = $meth(get_model(nlp), x)
 end
 for meth in (
   :grad!,
@@ -159,7 +192,7 @@ for meth in (
   :jac_nln_coord!,
 )
   @eval NLPModels.$meth(nlp::QuasiNewtonModel, x::AbstractVector, y::AbstractVector) =
-    $meth(nlp.model, x, y)
+    $meth(get_model(nlp), x, y)
 end
 for meth in (:jprod!, :jprod_lin!, :jprod_nln!, :jtprod!, :jtprod_lin!, :jtprod_nln!)
   @eval NLPModels.$meth(
@@ -167,27 +200,28 @@ for meth in (:jprod!, :jprod_lin!, :jprod_nln!, :jtprod!, :jtprod_lin!, :jtprod_
     x::AbstractVector,
     y::AbstractVector,
     z::AbstractVector,
-  ) = $meth(nlp.model, x, y, z)
+  ) = $meth(get_model(nlp), x, y, z)
 end
 NLPModels.jac_structure!(
   nlp::QuasiNewtonModel,
   rows::AbstractVector{<:Integer},
   cols::AbstractVector{<:Integer},
-) = jac_structure!(nlp.model, rows, cols)
+) = jac_structure!(get_model(nlp), rows, cols)
 NLPModels.jac_lin_structure!(
   nlp::QuasiNewtonModel,
   rows::AbstractVector{<:Integer},
   cols::AbstractVector{<:Integer},
-) = jac_lin_structure!(nlp.model, rows, cols)
+) = jac_lin_structure!(get_model(nlp), rows, cols)
 NLPModels.jac_nln_structure!(
   nlp::QuasiNewtonModel,
   rows::AbstractVector{<:Integer},
   cols::AbstractVector{<:Integer},
-) = jac_nln_structure!(nlp.model, rows, cols)
+) = jac_nln_structure!(get_model(nlp), rows, cols)
 
 # the following methods are affected by the Hessian approximation
-NLPModels.hess_op(nlp::QuasiNewtonModel, x::AbstractVector; kwargs...) = nlp.op
-NLPModels.hprod(nlp::QuasiNewtonModel, x::AbstractVector, v::AbstractVector; kwargs...) = nlp.op * v
+NLPModels.hess_op(nlp::QuasiNewtonModel, x::AbstractVector; kwargs...) = get_op(nlp)
+NLPModels.hprod(nlp::QuasiNewtonModel, x::AbstractVector, v::AbstractVector; kwargs...) =
+  get_op(nlp) * v
 
 function NLPModels.hprod!(
   nlp::QuasiNewtonModel,
@@ -207,16 +241,12 @@ function NLPModels.hprod!(
   kwargs...,
 )
   @lencheck nlp.meta.nvar Hv x v
-  mul!(Hv, nlp.op, v)
+  mul!(Hv, get_op(nlp), v)
   return Hv
 end
 
-NLPModels.neval_hprod(nlp::LBFGSModel) = nlp.op.nprod
-NLPModels.neval_hprod(nlp::LSR1Model) = nlp.op.nprod
-NLPModels.neval_hprod(nlp::DiagonalQNModel) = nlp.op.nprod
-
 function Base.push!(nlp::QuasiNewtonModel, args...)
-  push!(nlp.op, args...)
+  push!(get_op(nlp), args...)
   return nlp
 end
 
