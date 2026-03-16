@@ -29,6 +29,9 @@ function get_op(nlp::QuasiNewtonModel)
   error("get_op is not implemented for $(typeof(nlp)).")
 end
 
+# Redefine hprod for all QuasiNewtonModels.
+NLPModels.neval_hprod(nlp::QuasiNewtonModel) = get_op(nlp).nprod
+
 mutable struct LBFGSModel{
   T,
   S,
@@ -45,7 +48,6 @@ end
 get_model(nlp::LBFGSModel) = nlp.model
 get_op(nlp::LBFGSModel) = nlp.op
 @default_counters LBFGSModel model (neval_hprod,)
-NLPModels.neval_hprod(nlp::LBFGSModel) = get_op(nlp).nprod
 
 mutable struct LSR1Model{
   T,
@@ -63,7 +65,6 @@ end
 get_model(nlp::LSR1Model) = nlp.model
 get_op(nlp::LSR1Model) = nlp.op
 @default_counters LSR1Model model (neval_hprod,)
-NLPModels.neval_hprod(nlp::LSR1Model) = get_op(nlp).nprod
 
 mutable struct DiagonalQNModel{
   T,
@@ -80,7 +81,6 @@ end
 get_model(nlp::DiagonalQNModel) = nlp.model
 get_op(nlp::DiagonalQNModel) = nlp.op
 @default_counters DiagonalQNModel model (neval_hprod,)
-NLPModels.neval_hprod(nlp::DiagonalQNModel) = get_op(nlp).nprod
 
 "Construct a `LBFGSModel` from another type of model."
 function LBFGSModel(nlp::AbstractNLPModel{T, S}; kwargs...) where {T, S}
