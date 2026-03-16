@@ -14,6 +14,7 @@
         (LBFGSModel, LBFGSOperator),
         (DiagonalPSBModel, DiagonalPSB),
         (DiagonalAndreiModel, DiagonalAndrei),
+        (DiagonalBFGSModel, DiagonalBFGS),
         (SpectralGradientModel, SpectralGradient),
       ],
       T in [Float64, Float32],
@@ -24,7 +25,7 @@
       m = nlp.meta.ncon
 
       s, y = randn(T, n), randn(T, n)
-      if QNO ∈ (DiagonalPSB, DiagonalAndrei)
+      if QNO ∈ (DiagonalPSB, DiagonalAndrei, DiagonalBFGS)
         B = QNO(ones(T, n))
       elseif QNO == SpectralGradient
         B = QNO(one(T), n)
@@ -153,7 +154,14 @@
   end
 
   @testset "Show" begin
-    for QNM ∈ [LSR1Model, LBFGSModel, DiagonalPSBModel, DiagonalAndreiModel, SpectralGradientModel]
+    for QNM ∈ [
+      LSR1Model,
+      LBFGSModel,
+      DiagonalPSBModel,
+      DiagonalAndreiModel,
+      DiagonalBFGSModel,
+      SpectralGradientModel,
+    ]
       nlp = QNM(SimpleNLPModel())
       io = IOBuffer()
       show(io, nlp)

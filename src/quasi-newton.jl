@@ -4,6 +4,7 @@ export AbstractDiagonalQNModel,
   LSR1Model,
   DiagonalPSBModel,
   DiagonalAndreiModel,
+  DiagonalBFGSModel,
   SpectralGradientModel,
   get_model,
   get_op
@@ -127,6 +128,23 @@ function DiagonalAndreiModel(
   d0::S = fill!(S(undef, nlp.meta.nvar), one(T)),
 ) where {T, S}
   op = DiagonalAndrei(d0)
+  return DiagonalQNModel{T, S, typeof(nlp), typeof(nlp.meta), typeof(op)}(nlp.meta, nlp, op)
+end
+
+"""
+    DiagonalBFGSModel(nlp; d0 = fill!(S(undef, nlp.meta.nvar), 1.0))
+
+Construct a `DiagonalAndreiModel` from another type of nlp, in which the Hessian is approximated
+via a diagonal Andrei quasi-Newton operator.
+`d0` is the initial approximation of the diagonal of the Hessian, and by default a vector of ones.
+See the
+[`DiagonalAndrei operator documentation`](https://juliasmoothoptimizers.github.io/LinearOperators.jl/stable/reference/#LinearOperators.DiagonalAndrei).
+"""
+function DiagonalBFGSModel(
+  nlp::AbstractNLPModel{T, S};
+  d0::S = fill!(S(undef, nlp.meta.nvar), one(T)),
+) where {T, S}
+  op = DiagonalBFGS(d0)
   return DiagonalQNModel{T, S, typeof(nlp), typeof(nlp.meta), typeof(op)}(nlp.meta, nlp, op)
 end
 
