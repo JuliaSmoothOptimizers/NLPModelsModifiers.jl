@@ -29,7 +29,7 @@ function get_op(nlp::QuasiNewtonModel)
   error("get_op is not implemented for $(typeof(nlp)).")
 end
 
-# Redefine hprod for all QuasiNewtonModels.
+# Redefine neval_hprod for all QuasiNewtonModels.
 NLPModels.neval_hprod(nlp::QuasiNewtonModel) = get_op(nlp).nprod
 
 mutable struct LBFGSModel{
