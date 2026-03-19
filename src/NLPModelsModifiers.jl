@@ -14,6 +14,7 @@ macro notimplemented_use_nls(fun)
   ))
 end
 
+include("no-fixed.jl")
 include("feasibility-form-nls.jl")
 include("feasibility-residual.jl")
 include("quasi-newton.jl")

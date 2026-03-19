@@ -2,6 +2,7 @@ using LinearAlgebra, SparseArrays, Test
 using LinearOperators, NLPModels, NLPModelsModifiers
 
 include("nlp/simple-model.jl")
+include("nlp/no-fixed.jl")
 include("nlp/quasi-newton.jl")
 include("nlp/slack-model.jl")
 
