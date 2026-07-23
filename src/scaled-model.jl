@@ -4,14 +4,14 @@ struct ConservativeScaling{T}
   max_gradient::T
 end
 
-function _set_constraints_scaling!(cons, Ji, Jj, Jx, max_gradient)
-  # Store norm(∇cᵢ, Inf) at index i of vector cons
+function _set_constraints_scaling!(scaling, Ji, Jj, Jx, max_gradient)
+  # Store norm(∇cᵢ, Inf) at index i of vector scaling
   for (i, j, x) in zip(Ji, Jj, Jx)
-    cons[i] = max(cons[i], abs(x))
+    scaling[i] = max(scaling[i], abs(x))
   end
   # Compute scaling as min(1, max_gradient / norm(∇cᵢ, Inf) )
-  for i in eachindex(cons)
-    cons[i] = min(1.0, max_gradient / cons[i])
+  for i in eachindex(scaling)
+    scaling[i] = min(1.0, max_gradient / scaling[i])
   end
 end
 
