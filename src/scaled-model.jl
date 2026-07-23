@@ -5,7 +5,7 @@ struct ConservativeScaling{T}
 end
 
 function _set_constraints_scaling!(cons, Ji, Jj, Jx, max_gradient)
-  # Return a vector storing at index i norm(∇cᵢ, Inf)
+  # Store norm(∇cᵢ, Inf) at index i of vector cons
   for (i, j, x) in zip(Ji, Jj, Jx)
     cons[i] = max(cons[i], abs(x))
   end
@@ -15,10 +15,10 @@ function _set_constraints_scaling!(cons, Ji, Jj, Jx, max_gradient)
   end
 end
 
-function _set_jacobian_scaling!(Jx, Ji, Jj, cons)
+function _set_jacobian_scaling!(Jx, Ji, Jj, scaling)
   k = 0
   for (i, j) in zip(Ji, Jj)
-    Jx[k += 1] = cons[i]
+    Jx[k += 1] = scaling[i]
   end
 end
 
@@ -72,6 +72,14 @@ The vector ``g0 = ∇f(x0)`` and the matrix ``J0 = ∇c(x0)`` are resp.
 the gradient and the Jacobian evaluated at the initial point ``x0``.
 By default, the threshold parameter `max_gradient` is set to 100.0.
 
+The method has been originally proposed in Ipopt [1].
+
+## Reference
+
+[1] Wächter, A., & Biegler, L. T. (2006).
+On the implementation of an interior-point filter line-search algorithm for large-scale nonlinear programming.
+Mathematical programming, 106(1), 25-57.
+
 """
 struct ScaledModel{T, S, M} <: NLPModels.AbstractNLPModel{T, S}
   nlp::M
@@ -88,8 +96,8 @@ struct ScaledModel{T, S, M} <: NLPModels.AbstractNLPModel{T, S}
 end
 
 function ScaledModel(
-    nlp::NLPModels.AbstractNLPModel{T, S};
-    scaling=ConservativeScaling(T(100)),
+  nlp::NLPModels.AbstractNLPModel{T, S};
+  scaling=ConservativeScaling(T(100)),
 ) where {T, S}
   n, m = NLPModels.get_nvar(nlp), NLPModels.get_ncon(nlp)
   x0 = NLPModels.get_x0(nlp)

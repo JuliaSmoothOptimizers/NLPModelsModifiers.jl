@@ -1,14 +1,16 @@
 @testset "ScaledModel NLP tests" begin
   @testset "API" for T in [Float64, Float32], M in [NLPModelMeta, SimpleNLPMeta]
-    nlp = ScaledModel(SimpleNLPModel(T, M))
+    original_nlp = SimpleNLPModel(T, M)
+    nlp = ScaledModel(original_nlp)
     σ_obj, σ_cons = nlp.scaling_obj, nlp.scaling_cons
 
-    f(x) = σ_obj * (x[1] - 2)^2 + (x[2] - 1)^2
-    ∇f(x) = [σ_obj * 2 * (x[1] - 2); σ_obj * 2 * (x[2] - 1)]
-    H(x) = T[(σ_obj * 2.0) 0; 0 (σ_obj * 2.0)]
-    c(x) = [σ_cons[1] * (x[1] - 2x[2] + 1); σ_cons[2] * (-x[1]^2 / 4 - x[2]^2 + 1)]
-    J(x) = [σ_cons[1] -2.0*σ_cons[1]; (-0.5 *σ_cons[1] * x[1]) (-2.0*σ_cons[2] * x[2])]
-    H(x, y) = H(x) + σ_cons[2] * y[2] * T[-0.5 0; 0 -2.0]
+    # Hand-code the scaled problem from the original NLP.
+    f(x) = σ_obj * NLPModels.obj(original_nlp, x)
+    ∇f(x) = σ_obj .* NLPModels.grad(original_nlp, x)
+    H(x) = σ_obj .* NLPModels.hess(original_nlp, x)
+    c(x) = σ_cons .* NLPModels.cons(original_nlp, x)
+    J(x) = Diagonal(σ_cons) * NLPModels.jac(original_nlp, x)
+    H(x, y) = NLPModels.hess(original_nlp, x, σ_cons .* y; obj_weight=σ_obj)
 
     n = nlp.meta.nvar
     m = nlp.meta.ncon
