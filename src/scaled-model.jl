@@ -119,7 +119,7 @@ function ScaledModel(
   Jnln_i, Jnln_j = NLPModels.jac_nln_structure(nlp)
   k = 0
   for (i, j) in zip(Jnln_i, Jnln_j)
-    scaling_jac_lin[k += 1] = scaling_cons_nln[i]
+    scaling_jac_nln[k += 1] = scaling_cons_nln[i]
   end
 
   # Copy metadata from original problem, with some modifications.
