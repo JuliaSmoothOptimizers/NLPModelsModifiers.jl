@@ -60,6 +60,18 @@ mutable struct SimpleNLPMeta{T, S} <: AbstractNLPModelMeta{T, S}
   minimize::Bool
   islp::Bool
   name::String
+  variable_bounds_analysis::Bool
+  constraint_bounds_analysis::Bool
+
+  sparse_jacobian::Bool
+  sparse_hessian::Bool
+
+  grad_available::Bool
+  jac_available::Bool
+  hess_available::Bool
+  jprod_available::Bool
+  jtprod_available::Bool
+  hprod_available::Bool
   function SimpleNLPMeta{T, S}(
     nvar::Int;
     x0::S = fill!(S(undef, nvar), zero(T)),
@@ -81,6 +93,16 @@ mutable struct SimpleNLPMeta{T, S} <: AbstractNLPModelMeta{T, S}
     minimize = true,
     islp = false,
     name = "Generic",
+    variable_bounds_analysis::Bool = true,
+    constraint_bounds_analysis::Bool = true,
+    sparse_jacobian::Bool = true,
+    sparse_hessian::Bool = true,
+    grad_available::Bool = true,
+    jac_available::Bool = (ncon > 0),
+    hess_available::Bool = true,
+    jprod_available::Bool = (ncon > 0),
+    jtprod_available::Bool = (ncon > 0),
+    hprod_available::Bool = true,
   ) where {T, S}
     if (nvar < 1) || (ncon < 0)
       error("Nonsensical dimensions")
@@ -147,6 +169,16 @@ mutable struct SimpleNLPMeta{T, S} <: AbstractNLPModelMeta{T, S}
       minimize,
       islp,
       name,
+      variable_bounds_analysis,
+      constraint_bounds_analysis,
+      sparse_jacobian,
+      sparse_hessian,
+      grad_available,
+      jac_available,
+      hess_available,
+      jprod_available,
+      jtprod_available,
+      hprod_available,
     )
   end
 end
