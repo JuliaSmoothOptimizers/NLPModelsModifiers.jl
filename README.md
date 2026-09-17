@@ -16,7 +16,6 @@ The models in this package specialize on modifying existing methods.
 [![codecov](https://codecov.io/gh/JuliaSmoothOptimizers/NLPModelsModifiers.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/JuliaSmoothOptimizers/NLPModelsModifiers.jl)
 
 ![CI](https://github.com/JuliaSmoothOptimizers/NLPModelsModifiers.jl/workflows/CI/badge.svg?branch=main)
-[![Cirrus CI - Base Branch Build Status](https://img.shields.io/cirrus/github/JuliaSmoothOptimizers/NLPModelsModifiers.jl?logo=Cirrus%20CI)](https://cirrus-ci.com/github/JuliaSmoothOptimizers/NLPModelsModifiers.jl)
 
 ## Models
 
