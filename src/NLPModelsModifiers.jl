@@ -18,6 +18,7 @@ include("feasibility-form-nls.jl")
 include("feasibility-residual.jl")
 include("quasi-newton.jl")
 include("slack-model.jl")
+include("scaled-model.jl")
 include("model-interaction.jl")
 
 end # module
