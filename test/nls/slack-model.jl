@@ -156,6 +156,12 @@
     @test Hop * v ≈ H(x, y) * v
     Hop = hess_op!(nls, hess_structure(nls)..., hess_coord(nls, x, y), Hv)
     @test Hop * v ≈ H(x, y) * v
+
+    # Test find model
+    @test find_model(SimpleNLSModel, nls) isa SimpleNLSModel
+    @test find_model(SlackNLSModel, nls) isa SlackNLSModel
+    struct FooModel{T, S} <: AbstractNLSModel{T, S} end
+    @test find_model(FooModel, nls) === nothing
   end
 
   @testset "Show" begin
