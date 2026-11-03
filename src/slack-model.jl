@@ -79,6 +79,8 @@ mutable struct SlackModel{T, S, M <: AbstractNLPModel{T, S}} <: AbstractNLPModel
   jrng_nln::Vector{Int}
 end
 
+get_model(nlp::SlackModel) = nlp.model
+
 NLPModels.show_header(io::IO, nlp::SlackModel) =
   println(io, "SlackModel - Model with slack variables")
 
@@ -102,6 +104,8 @@ mutable struct SlackNLSModel{T, S, M <: AbstractNLPModel{T, S}} <: AbstractNLSMo
   jupp_nln::Vector{Int}
   jrng_nln::Vector{Int}
 end
+
+get_model(nls::SlackNLSModel) = nls.model
 
 NLPModels.show_header(io::IO, nls::SlackNLSModel) =
   println(io, "SlackNLSModel - Nonlinear least-squares model with slack variables")
