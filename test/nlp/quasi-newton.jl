@@ -134,7 +134,7 @@
       # Test find model
       @test find_model(SimpleNLPModel, nlp) isa SimpleNLPModel
       @test find_model(QNM, nlp) isa QNM
-      struct FooModel <: AbstractNLPModel end
+      struct FooModel{T, S} <: AbstractNLPModel{T, S} end
       @test find_model(FooModel, nlp) === nothing
     end
   end
