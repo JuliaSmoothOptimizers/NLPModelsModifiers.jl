@@ -133,7 +133,7 @@
 
       # Test find model
       @test find_model(SimpleNLPModel, nlp) isa SimpleNLPModel
-      @test find_model(QNM, nlp) isa QNM
+      @test find_model(QuasiNewtonModel, nlp) isa QuasiNewtonModel
       struct FooModel{T, S} <: AbstractNLPModel{T, S} end
       @test find_model(FooModel, nlp) === nothing
     end

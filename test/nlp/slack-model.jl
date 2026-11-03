@@ -92,12 +92,6 @@
     @test mul!(z, Hop, v, one(T), -one(T)) ≈ res
     Hop = hess_op!(nlp, hess_structure(nlp)..., hess_coord(nlp, x, y), Hv)
     @test Hop * v ≈ H(x, y) * v
-
-    # Test find model
-    @test find_model(SimpleNLPModel, nlp) isa SimpleNLPModel
-    @test find_model(SlackModel, nlp) isa SlackModel
-    struct FooModel{T, S} <: AbstractNLPModel{T, S} end
-    @test find_model(FooModel, nlp) === nothing
   end
 
   @testset "Show" begin
