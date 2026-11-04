@@ -47,6 +47,11 @@ mutable struct FixedVariableEliminationModel{
 
   free::Vector{Int}   # indices (in the full model) of the free variables
 
+  # positions, in the coordinates of the full model, of the entries involving fixed variables
+  jac_lin_dead::Vector{Int}  # in the linear Jacobian
+  jac_nln_dead::Vector{Int}  # in the nonlinear Jacobian
+  hess_dead::Vector{Int}     # in the Hessian of the Lagrangian
+
   x_full::S    # length nvar(nlp); fixed entries permanently hold their bound value
   g_full::S    # scratch buffer, length nvar(nlp)
   v_full::S    # scratch buffer, length nvar(nlp)
@@ -65,6 +70,13 @@ mutable struct FixedVariableEliminationNLSModel{
   model::M
 
   free::Vector{Int}   # indices (in the full model) of the free variables
+
+  # positions, in the coordinates of the full model, of the entries involving fixed variables
+  jac_lin_dead::Vector{Int}  # in the linear Jacobian
+  jac_nln_dead::Vector{Int}  # in the nonlinear Jacobian
+  hess_dead::Vector{Int}     # in the Hessian of the Lagrangian
+  jac_residual_dead::Vector{Int}  # in the Jacobian of the residual
+  hess_residual_dead::Vector{Int} # in the Hessian of the residual
 
   x_full::S    # length nvar(nlp); fixed entries permanently hold their bound value
   g_full::S    # scratch buffer, length nvar(nlp)
@@ -255,4 +267,88 @@ function NLPModels.hprod_residual!(
   hprod_residual!(nlp.model, nlp.x_full, i, nlp.v_full, nlp.g_full)
   Hiv .= @view nlp.g_full[nlp.free]        # ∇²Fᵢ(x) * v = (∇²Fᵢ(X))[v_free; 0]
   return Hiv
+end
+
+# ------------------------------------------------------------------------
+# Sparse API
+# ------------------------------------------------------------------------
+
+for (Model, coord_f!, nnz, dead) in (
+  (:FixedVariableEliminationModels, :jac_lin_coord!, :(nlp.meta.lin_nnzj), :jac_lin_dead),
+  (:FixedVariableEliminationModels, :jac_nln_coord!, :(nlp.meta.nln_nnzj), :jac_nln_dead),
+  (:FixedVariableEliminationNLSModel, :jac_coord_residual!, :(nlp.nls_meta.nnzj), :jac_residual_dead,),
+)
+  @eval function NLPModels.$coord_f!(nlp::$Model, x::AbstractVector, vals::AbstractVector)
+    @lencheck nlp.meta.nvar x
+    @lencheck $nnz vals
+
+    nlp.x_full[nlp.free] .= x                # load buffer with free variables
+    $coord_f!(nlp.model, nlp.x_full, vals)
+    vals[nlp.$dead] .= 0                     # zero the entries involving fixed variables
+    return vals
+  end
+end
+
+function NLPModels.hess_coord!(
+  nlp::FixedVariableEliminationModels,
+  x::AbstractVector,
+  vals::AbstractVector;
+  obj_weight = one(eltype(x)),
+)
+  @lencheck nlp.meta.nvar x
+  @lencheck nlp.meta.nnzh vals
+
+  nlp.x_full[nlp.free] .= x                # load buffer with free variables
+  hess_coord!(nlp.model, nlp.x_full, vals; obj_weight = obj_weight)
+  vals[nlp.hess_dead] .= 0                 # zero the entries involving fixed variables
+  return vals
+end
+
+function NLPModels.hess_coord!(
+  nlp::FixedVariableEliminationModels,
+  x::AbstractVector,
+  y::AbstractVector,
+  vals::AbstractVector;
+  obj_weight = one(eltype(x)),
+)
+  @lencheck nlp.meta.nvar x
+  @lencheck nlp.meta.ncon y
+  @lencheck nlp.meta.nnzh vals
+
+  nlp.x_full[nlp.free] .= x                # load buffer with free variables
+  hess_coord!(nlp.model, nlp.x_full, y, vals; obj_weight = obj_weight)
+  vals[nlp.hess_dead] .= 0                 # zero the entries involving fixed variables
+  return vals
+end
+
+function NLPModels.jth_hess_coord!(
+  nlp::FixedVariableEliminationModels,
+  x::AbstractVector,
+  j::Integer,
+  vals::AbstractVector,
+)
+  @lencheck nlp.meta.nvar x
+  @rangecheck 1 nlp.meta.ncon j
+  @lencheck nlp.meta.nnzh vals
+
+  nlp.x_full[nlp.free] .= x                # load buffer with free variables
+  jth_hess_coord!(nlp.model, nlp.x_full, j, vals)
+  vals[nlp.hess_dead] .= 0                 # zero the entries involving fixed variables
+  return vals
+end
+
+function NLPModels.hess_coord_residual!(
+  nlp::FixedVariableEliminationNLSModel,
+  x::AbstractVector,
+  v::AbstractVector,
+  vals::AbstractVector,
+)
+  @lencheck nlp.meta.nvar x
+  @lencheck nlp.nls_meta.nequ v
+  @lencheck nlp.nls_meta.nnzh vals
+
+  nlp.x_full[nlp.free] .= x                # load buffer with free variables
+  hess_coord_residual!(nlp.model, nlp.x_full, v, vals)
+  vals[nlp.hess_residual_dead] .= 0        # zero the entries involving fixed variables
+  return vals
 end
