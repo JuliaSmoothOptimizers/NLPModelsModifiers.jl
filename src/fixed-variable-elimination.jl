@@ -10,7 +10,7 @@ mutable struct FixedVariableEliminationModel{
 
   free::Vector{Int}   # indices (in the full model) of the free variables
 
-  g_full::S    # length nvar(nlp); fixed entries permanently hold their bound value
+  x_full::S    # length nvar(nlp); fixed entries permanently hold their bound value
   g_full::S    # scratch buffer, length nvar(nlp)
   v_full::S    # scratch buffer, length nvar(nlp)
 end
@@ -68,9 +68,8 @@ function NLPModels.objgrad!(
   @lencheck nlp.meta.nvar x g
 
   nlp.x_full[nlp.free] .= x                # load buffer with free variables
-  grad!(nlp.model, nlp.x_full, nlp.g_full) # apply gradient on full model
-  f = obj(nlp.model, nlp.x_full)
-  g .= @view nlp.g_full[nlp.free]          # unload gradient of free variables
+  f, _ = objgrad!(nlp.model, nlp.x_full, nlp.g_full) # apply objgrad on full model
+  g .= @view nlp.g_full[nlp.free]                    # unload gradient of free variables
   return f, g
 end
 
@@ -79,7 +78,8 @@ function NLPModels.cons!(nlp::FixedVariableEliminationModels, x::AbstractVector,
   @lencheck nlp.meta.ncon cx
 
   nlp.x_full[nlp.free] .= x                # load buffer with free variables
-  cons!(nlp, nlp.x_full, cx)
+  cons!(nlp.model, nlp.x_full, cx)
+  return cx
 end
 
 function NLPModels.jprod!(
@@ -120,8 +120,7 @@ function NLPModels.hprod!(
   Hv::AbstractVector;
   obj_weight = one(eltype(x)),
 )
-  @lencheck nlp.meta.nvar x v hv
-  @lencheck nlp.meta.ncon y
+  @lencheck nlp.meta.nvar x v Hv
 
   nlp.x_full[nlp.free] .= x                # load buffer with free variables
   nlp.v_full .= 0
@@ -132,14 +131,14 @@ function NLPModels.hprod!(
 end
 
 function NLPModels.hprod!(
-  nlp::FixedVariableEliminationModel,
+  nlp::FixedVariableEliminationModels,
   x::AbstractVector,
   y::AbstractVector,
   v::AbstractVector,
   Hv::AbstractVector;
   obj_weight = one(eltype(x)),
 )
-  @lencheck nlp.meta.nvar x v hv
+  @lencheck nlp.meta.nvar x v Hv
   @lencheck nlp.meta.ncon y
 
   nlp.x_full[nlp.free] .= x                # load buffer with free variables
