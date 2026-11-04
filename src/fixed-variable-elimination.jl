@@ -160,3 +160,40 @@ function NLPModels.hprod!(
   Hv .= @view nlp.g_full[nlp.free]         # unload Hessian-vector product of free variables
   return Hv
 end
+
+function NLPModels.jth_hprod!(
+  nlp::FixedVariableEliminationModels,
+  x::AbstractVector,
+  v::AbstractVector,
+  j::Integer,
+  Hv::AbstractVector,
+)
+  @lencheck nlp.meta.nvar x v Hv
+  @rangecheck 1 nlp.meta.ncon j
+
+  nlp.x_full[nlp.free] .= x                # load buffer with free variables
+  nlp.v_full .= 0
+  nlp.v_full[nlp.free] .= v                # load buffer with free variables
+  jth_hprod!(nlp.model, nlp.x_full, nlp.v_full, j, nlp.g_full)
+  Hv .= @view nlp.g_full[nlp.free]         # ∇²cⱼ(x) * v = (∇²cⱼ(X))[v_free; 0]
+  return Hv
+end
+
+function NLPModels.ghjvprod!(
+  nlp::FixedVariableEliminationModels,
+  x::AbstractVector,
+  g::AbstractVector,
+  v::AbstractVector,
+  gHv::AbstractVector,
+)
+  @lencheck nlp.meta.nvar x g v
+  @lencheck nlp.meta.ncon gHv
+
+  nlp.x_full[nlp.free] .= x                # load buffer with free variables
+  nlp.g_full .= 0
+  nlp.g_full[nlp.free] .= g                # load buffer with free variables
+  nlp.v_full .= 0
+  nlp.v_full[nlp.free] .= v                # load buffer with free variables
+  ghjvprod!(nlp.model, nlp.x_full, nlp.g_full, nlp.v_full, gHv)
+  return gHv                               # (gᵀ ∇²cᵢ(x) v)ᵢ = ([g_free; 0]ᵀ ∇²cᵢ(X) [v_free; 0])ᵢ
+end
