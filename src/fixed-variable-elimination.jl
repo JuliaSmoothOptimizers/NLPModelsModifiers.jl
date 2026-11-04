@@ -1,5 +1,42 @@
 export FixedVariableEliminationModel, FixedVariableEliminationNLSModel
 
+@doc raw"""A model whose fixed variables are eliminated.
+
+Given a model, this type represents a second model in which the fixed variables,
+i.e., the variables whose lower and upper bounds are equal, are removed from the
+unknowns and replaced by their fixed value. More precisely, if the original
+model has the form
+
+```math
+\begin{aligned}
+       \min_X \quad & f(X)\\
+\mathrm{s.t.} \quad & c_L ≤ c(X) ≤ c_U,\\
+                    &  ℓ  ≤  X   ≤  u,
+\end{aligned}
+```
+
+Denoting with $$\mathcal{F} = \{i \in \{1, 2, \ldots, n\} : ℓ_i = u_i\}$$ the set of indices of the fixed variables,
+the new model appears to the user as
+
+```math
+\begin{aligned}
+       \min_x \quad & \bar f(x)\\
+\mathrm{s.t.} \quad & c_L ≤ \bar c(x) ≤ c_U,\\
+                    &  ℓ_{\mathcal{F}^c}  ≤ x ≤  u_{\mathcal{F}^c},
+\end{aligned}
+```
+where $$\mathcal{F}^c = \{1, 2, \ldots, n\} \setminus \mathcal{F}$$ and 
+```math
+\begin{aligned}
+       \bar f(x) &= f(x, l) = f(x, u) = f(X), \\
+       \bar c(x) &= c(x, l) = c(x, u) = c(X).
+\end{aligned}
+```
+
+!!! warning
+    It is recommended to formulate NLPModels without fixed variables.
+    Users interested in performance should avoid using this model type.
+"""
 mutable struct FixedVariableEliminationModel{
   T,
   S <: AbstractVector{T},
@@ -15,6 +52,9 @@ mutable struct FixedVariableEliminationModel{
   v_full::S    # scratch buffer, length nvar(nlp)
 end
 
+@doc raw"""Like `FixedVariableEliminationModel`, this model eliminates the fixed variables
+of a nonlinear least-squares model. 
+"""
 mutable struct FixedVariableEliminationNLSModel{
   T,
   S <: AbstractVector{T},
