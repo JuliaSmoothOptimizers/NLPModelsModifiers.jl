@@ -18,7 +18,7 @@ end
 mutable struct FixedVariableEliminationNLSModel{
   T,
   S <: AbstractVector{T},
-  M <: AbstractNLPModel{T, S},
+  M <: AbstractNLSModel{T, S},
 } <: AbstractNLSModel{T, S}
   meta::NLPModelMeta{T, S}
   nls_meta::NLSMeta{T, S}
@@ -73,19 +73,20 @@ function NLPModels.objgrad!(
   return f, g
 end
 
-for (cons_f!, jprod_f!, jtprod_f!, ncon) in (
-  (:cons!, :jprod!, :jtprod!, :ncon),
-  (:cons_lin!, :jprod_lin!, :jtprod_lin!, :nlin),
-  (:cons_nln!, :jprod_nln!, :jtprod_nln!, :nnln),
+for (Model, cons_f!, jprod_f!, jtprod_f!, ncon) in (
+  (:FixedVariableEliminationModels, :cons!, :jprod!, :jtprod!, :(nlp.meta.ncon)),
+  (:FixedVariableEliminationModels, :cons_lin!, :jprod_lin!, :jtprod_lin!, :(nlp.meta.nlin)),
+  (:FixedVariableEliminationModels, :cons_nln!, :jprod_nln!, :jtprod_nln!, :(nlp.meta.nnln)),
+  (:FixedVariableEliminationNLSModel, :residual!, :jprod_residual!, :jtprod_residual!, :(nlp.nls_meta.nequ),),
 )
   @eval begin
     function NLPModels.$cons_f!(
-      nlp::FixedVariableEliminationModels,
+      nlp::$Model,
       x::AbstractVector,
       cx::AbstractVector,
     )
       @lencheck nlp.meta.nvar x
-      @lencheck nlp.meta.$ncon cx
+      @lencheck $ncon cx
 
       nlp.x_full[nlp.free] .= x                # load buffer with free variables
       $cons_f!(nlp.model, nlp.x_full, cx)
@@ -93,13 +94,13 @@ for (cons_f!, jprod_f!, jtprod_f!, ncon) in (
     end
 
     function NLPModels.$jprod_f!(
-      nlp::FixedVariableEliminationModels,
+      nlp::$Model,
       x::AbstractVector,
       v::AbstractVector,
       Jv::AbstractVector,
     )
       @lencheck nlp.meta.nvar x v
-      @lencheck nlp.meta.$ncon Jv
+      @lencheck $ncon Jv
 
       nlp.x_full[nlp.free] .= x                # load buffer with free variables
       nlp.v_full .= 0
@@ -109,13 +110,13 @@ for (cons_f!, jprod_f!, jtprod_f!, ncon) in (
     end
 
     function NLPModels.$jtprod_f!(
-      nlp::FixedVariableEliminationModels,
+      nlp::$Model,
       x::AbstractVector,
       v::AbstractVector,
       Jtv::AbstractVector,
     )
       @lencheck nlp.meta.nvar x Jtv
-      @lencheck nlp.meta.$ncon v
+      @lencheck $ncon v
 
       nlp.x_full[nlp.free] .= x                # load buffer with free variables
       $jtprod_f!(nlp.model, nlp.x_full, v, nlp.g_full)
@@ -196,4 +197,22 @@ function NLPModels.ghjvprod!(
   nlp.v_full[nlp.free] .= v                # load buffer with free variables
   ghjvprod!(nlp.model, nlp.x_full, nlp.g_full, nlp.v_full, gHv)
   return gHv                               # (gᵀ ∇²cᵢ(x) v)ᵢ = ([g_free; 0]ᵀ ∇²cᵢ(X) [v_free; 0])ᵢ
+end
+
+function NLPModels.hprod_residual!(
+  nlp::FixedVariableEliminationNLSModel,
+  x::AbstractVector,
+  i::Integer,
+  v::AbstractVector,
+  Hiv::AbstractVector,
+)
+  @lencheck nlp.meta.nvar x v Hiv
+  @rangecheck 1 nlp.nls_meta.nequ i
+
+  nlp.x_full[nlp.free] .= x                # load buffer with free variables
+  nlp.v_full .= 0
+  nlp.v_full[nlp.free] .= v                # load buffer with free variables
+  hprod_residual!(nlp.model, nlp.x_full, i, nlp.v_full, nlp.g_full)
+  Hiv .= @view nlp.g_full[nlp.free]        # ∇²Fᵢ(x) * v = (∇²Fᵢ(X))[v_free; 0]
+  return Hiv
 end
