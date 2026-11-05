@@ -275,6 +275,9 @@ end
 # Sparse API
 # ------------------------------------------------------------------------
 
+# The dead entries are computed at the first call to the sparse API; until then, the list is [-1].
+is_uninitialized(dead::Vector{Int}) = length(dead) == 1 && dead[1] == -1
+
 for (Model, structure_f!, nnz, dead) in (
   (:FixedVariableEliminationModels, :jac_structure!, :(nlp.meta.nnzj), :jac_dead),
   (:FixedVariableEliminationModels, :jac_lin_structure!, :(nlp.meta.lin_nnzj), :jac_lin_dead),
@@ -291,16 +294,16 @@ for (Model, structure_f!, nnz, dead) in (
     $structure_f!(nlp.model, rows, cols)     # compute the sparsity structure of the full model
 
     # Kill the column entries that correspond to fixed variables.
-    dead_idx, n_free = 1, length(nlp.free)
+    record = is_uninitialized(nlp.$dead)     # first call: record the dead entries
+    n_free = length(nlp.free)
     for k in eachindex(cols)                 # O(nnzj)
       col_j_free_idx = searchsortedfirst(nlp.free, cols[k])  # O(log(n_free))
       is_col_j_free = nlp.free[min(col_j_free_idx, n_free)] == cols[k]
       if is_col_j_free
-        cols[k] = col_j_free_idx         # remap the column index to the free variable space
+        cols[k] = col_j_free_idx             # remap the column index to the free variable space
       else
         rows[k], cols[k] = 1, 1              # Kill the entry: move it to some entry in the free variable space.
-        nlp.$dead[dead_idx] = k              # Bookkeeping
-        dead_idx += 1
+        record && push!(nlp.$dead, k)        # Bookkeeping
       end
     end
     return rows, cols
@@ -321,7 +324,8 @@ for (Model, structure_f!, nnz, dead) in (
     $structure_f!(nlp.model, rows, cols) # compute the sparsity structure of the full model
 
     # Kill the entries that correspond to fixed variables.
-    dead_idx, n_free = 1, length(nlp.free)
+    record = is_uninitialized(nlp.$dead)     # first call: record the dead entries
+    n_free = length(nlp.free)
     for k in eachindex(cols)                 # O(nnzh)
 
       # Check column
@@ -336,12 +340,29 @@ for (Model, structure_f!, nnz, dead) in (
         cols[k] = col_h_free_idx         # remap the column index to the free variable space
         rows[k] = row_h_free_idx         # remap the row index to the free variable space
       else
-        rows[k], cols[k] = 1, 1        # Kill the entry: move it to some entry in the free variable space.
-        nlp.$dead[dead_idx] = k        # Bookkeeping
-        dead_idx += 1
+        rows[k], cols[k] = 1, 1          # Kill the entry: move it to some entry in the free variable space.
+        record && push!(nlp.$dead, k)    # Bookkeeping
       end
     end
     return rows, cols
+  end
+end
+
+# Dead entries for the coord functions. If the corresponding structure function has not been
+# called yet, call it once on temporary arrays: it records the dead entries.
+for (Model, structure_f!, nnz, dead) in (
+  (:FixedVariableEliminationModels, :jac_structure!, :(nlp.meta.nnzj), :jac_dead),
+  (:FixedVariableEliminationModels, :jac_lin_structure!, :(nlp.meta.lin_nnzj), :jac_lin_dead),
+  (:FixedVariableEliminationModels, :jac_nln_structure!, :(nlp.meta.nln_nnzj), :jac_nln_dead),
+  (:FixedVariableEliminationModels, :hess_structure!, :(nlp.meta.nnzh), :hess_dead),
+  (:FixedVariableEliminationNLSModel, :jac_structure_residual!, :(nlp.nls_meta.nnzj), :jac_residual_dead,),
+  (:FixedVariableEliminationNLSModel, :hess_structure_residual!, :(nlp.nls_meta.nnzh), :hess_residual_dead,),
+)
+  @eval function $(Symbol(dead, :_entries))(nlp::$Model)
+    if is_uninitialized(nlp.$dead) # Initialize the dead entries by calling the corresponding structure function on temporary arrays.
+      $structure_f!(nlp, Vector{Int}(undef, $nnz), Vector{Int}(undef, $nnz))
+    end
+    return nlp.$dead
   end
 end
 
@@ -357,7 +378,7 @@ for (Model, coord_f!, nnz, dead) in (
 
     nlp.x_full[nlp.free] .= x                # load buffer with free variables
     $coord_f!(nlp.model, nlp.x_full, vals)
-    vals[nlp.$dead] .= 0                     # zero the entries involving fixed variables
+    vals[$(Symbol(dead, :_entries))(nlp)] .= 0  # zero the entries involving fixed variables
     return vals
   end
 end
@@ -373,7 +394,7 @@ function NLPModels.hess_coord!(
 
   nlp.x_full[nlp.free] .= x                # load buffer with free variables
   hess_coord!(nlp.model, nlp.x_full, vals; obj_weight = obj_weight)
-  vals[nlp.hess_dead] .= 0                 # zero the entries involving fixed variables
+  vals[hess_dead_entries(nlp)] .= 0        # zero the entries involving fixed variables
   return vals
 end
 
@@ -390,7 +411,7 @@ function NLPModels.hess_coord!(
 
   nlp.x_full[nlp.free] .= x                # load buffer with free variables
   hess_coord!(nlp.model, nlp.x_full, y, vals; obj_weight = obj_weight)
-  vals[nlp.hess_dead] .= 0                 # zero the entries involving fixed variables
+  vals[hess_dead_entries(nlp)] .= 0        # zero the entries involving fixed variables
   return vals
 end
 
@@ -406,7 +427,7 @@ function NLPModels.jth_hess_coord!(
 
   nlp.x_full[nlp.free] .= x                # load buffer with free variables
   jth_hess_coord!(nlp.model, nlp.x_full, j, vals)
-  vals[nlp.hess_dead] .= 0                 # zero the entries involving fixed variables
+  vals[hess_dead_entries(nlp)] .= 0        # zero the entries involving fixed variables
   return vals
 end
 
@@ -422,6 +443,6 @@ function NLPModels.hess_coord_residual!(
 
   nlp.x_full[nlp.free] .= x                # load buffer with free variables
   hess_coord_residual!(nlp.model, nlp.x_full, v, vals)
-  vals[nlp.hess_residual_dead] .= 0        # zero the entries involving fixed variables
+  vals[hess_residual_dead_entries(nlp)] .= 0 # zero the entries involving fixed variables
   return vals
 end
