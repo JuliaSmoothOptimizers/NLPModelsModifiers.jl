@@ -1,4 +1,5 @@
 export FixedVariableEliminationModel, FixedVariableEliminationNLSModel
+export recover_full_solution, recover_full_solution!
 
 @doc raw"""A model whose fixed variables are eliminated.
 
@@ -55,7 +56,7 @@ mutable struct FixedVariableEliminationModel{
 
   x_full::S    # length nvar(nlp); fixed entries permanently hold their bound value
   g_full::S    # scratch buffer, length nvar(nlp)
-  v_full::S    # scratch buffer, length nvar(nlp)
+  v_full::S    # length nvar(nlp); fixed entries permanently hold zero
 end
 
 @doc raw"""Like `FixedVariableEliminationModel`, this model eliminates the fixed variables
@@ -82,7 +83,7 @@ mutable struct FixedVariableEliminationNLSModel{
 
   x_full::S    # length nvar(nlp); fixed entries permanently hold their bound value
   g_full::S    # scratch buffer, length nvar(nlp)
-  v_full::S    # scratch buffer, length nvar(nlp)
+  v_full::S    # length nvar(nlp); fixed entries permanently hold zero
 end
 
 const FixedVariableEliminationModels =
@@ -93,6 +94,54 @@ const FixedVariableEliminationModels =
 @default_nlscounters FixedVariableEliminationNLSModel model
 
 nls_meta(nlp::FixedVariableEliminationNLSModel) = nlp.nls_meta
+
+get_model(nlp::FixedVariableEliminationModels) = nlp.model
+
+NLPModels.show_header(io::IO, nlp::FixedVariableEliminationModel) =
+  println(io, "FixedVariableEliminationModel - Model without fixed variables")
+
+function Base.show(io::IO, nlp::FixedVariableEliminationModel)
+  show_header(io, nlp)
+  show(io, nlp.meta)
+  show(io, nlp.model.counters)
+end
+
+NLPModels.show_header(io::IO, nls::FixedVariableEliminationNLSModel) =
+  println(io, "FixedVariableEliminationNLSModel - Nonlinear least-squares model without fixed variables")
+
+function Base.show(io::IO, nls::FixedVariableEliminationNLSModel)
+  show_header(io, nls)
+  show(io, nls.meta, nls.nls_meta)
+  show(io, nls.model.counters)
+end
+
+"""
+    X = recover_full_solution(nlp, x)
+
+Return the vector `X` of the full model corresponding to the vector `x` of the free variables
+of `nlp`: the free entries of `X` are those of `x` and the fixed entries hold their fixed value.
+If `nlp` is wrapped in other models, it can be retrieved with `find_model`.
+"""
+recover_full_solution(nlp::FixedVariableEliminationModels, x::AbstractVector) =
+  recover_full_solution!(nlp, x, similar(nlp.x_full))
+
+"""
+    recover_full_solution!(nlp, x, X)
+
+In-place version of [`recover_full_solution`](@ref).
+"""
+function recover_full_solution!(
+  nlp::FixedVariableEliminationModels,
+  x::AbstractVector,
+  X::AbstractVector,
+)
+  @lencheck nlp.meta.nvar x
+  @lencheck nlp.model.meta.nvar X
+
+  X .= nlp.x_full                          # fixed entries hold their fixed value
+  X[nlp.free] .= x                         # load free variables
+  return X
+end
 
 function fixed_variable_elimination_meta(
   meta::AbstractNLPModelMeta{T, S};
@@ -121,6 +170,14 @@ function fixed_variable_elimination_meta(
     name = name,
     minimize = meta.minimize,
     islp = meta.islp,
+    sparse_jacobian = meta.sparse_jacobian,
+    sparse_hessian = meta.sparse_hessian,
+    grad_available = meta.grad_available,
+    jac_available = meta.jac_available,
+    hess_available = meta.hess_available,
+    jprod_available = meta.jprod_available,
+    jtprod_available = meta.jtprod_available,
+    hprod_available = meta.hprod_available,
   )
 end
 
@@ -163,6 +220,11 @@ function FixedVariableEliminationNLSModel(
     nnzj = model.nls_meta.nnzj,
     nnzh = model.nls_meta.nnzh,
     lin = model.nls_meta.lin,
+    jac_residual_available = model.nls_meta.jac_residual_available,
+    hess_residual_available = model.nls_meta.hess_residual_available,
+    jprod_residual_available = model.nls_meta.jprod_residual_available,
+    jtprod_residual_available = model.nls_meta.jtprod_residual_available,
+    hprod_residual_available = model.nls_meta.hprod_residual_available,
   )
   x_full, g_full, v_full = fixed_variable_elimination_buffers(model.meta)
 
@@ -251,7 +313,6 @@ for (Model, cons_f!, jprod_f!, jtprod_f!, ncon) in (
       @lencheck $ncon Jv
 
       nlp.x_full[nlp.free] .= x                # load buffer with free variables
-      nlp.v_full .= 0
       nlp.v_full[nlp.free] .= v                # load buffer with free variables
       $jprod_f!(nlp.model, nlp.x_full, nlp.v_full, Jv)
       return Jv                                # J(x) * v = J(X) * [v_free; 0]
@@ -284,7 +345,6 @@ function NLPModels.hprod!(
   @lencheck nlp.meta.nvar x v Hv
 
   nlp.x_full[nlp.free] .= x                # load buffer with free variables
-  nlp.v_full .= 0
   nlp.v_full[nlp.free] .= v                # load buffer with free variables
   hprod!(nlp.model, nlp.x_full, nlp.v_full, nlp.g_full; obj_weight = obj_weight)
   Hv .= @view nlp.g_full[nlp.free]         # unload Hessian-vector product of free variables
@@ -303,7 +363,6 @@ function NLPModels.hprod!(
   @lencheck nlp.meta.ncon y
 
   nlp.x_full[nlp.free] .= x                # load buffer with free variables
-  nlp.v_full .= 0
   nlp.v_full[nlp.free] .= v                # load buffer with free variables
   hprod!(nlp.model, nlp.x_full, y, nlp.v_full, nlp.g_full; obj_weight = obj_weight)
   Hv .= @view nlp.g_full[nlp.free]         # unload Hessian-vector product of free variables
@@ -321,7 +380,6 @@ function NLPModels.jth_hprod!(
   @rangecheck 1 nlp.meta.ncon j
 
   nlp.x_full[nlp.free] .= x                # load buffer with free variables
-  nlp.v_full .= 0
   nlp.v_full[nlp.free] .= v                # load buffer with free variables
   jth_hprod!(nlp.model, nlp.x_full, nlp.v_full, j, nlp.g_full)
   Hv .= @view nlp.g_full[nlp.free]         # ∇²cⱼ(x) * v = (∇²cⱼ(X))[v_free; 0]
@@ -341,7 +399,6 @@ function NLPModels.ghjvprod!(
   nlp.x_full[nlp.free] .= x                # load buffer with free variables
   nlp.g_full .= 0
   nlp.g_full[nlp.free] .= g                # load buffer with free variables
-  nlp.v_full .= 0
   nlp.v_full[nlp.free] .= v                # load buffer with free variables
   ghjvprod!(nlp.model, nlp.x_full, nlp.g_full, nlp.v_full, gHv)
   return gHv                               # (gᵀ ∇²cᵢ(x) v)ᵢ = ([g_free; 0]ᵀ ∇²cᵢ(X) [v_free; 0])ᵢ
@@ -358,7 +415,6 @@ function NLPModels.hprod_residual!(
   @rangecheck 1 nlp.nls_meta.nequ i
 
   nlp.x_full[nlp.free] .= x                # load buffer with free variables
-  nlp.v_full .= 0
   nlp.v_full[nlp.free] .= v                # load buffer with free variables
   hprod_residual!(nlp.model, nlp.x_full, i, nlp.v_full, nlp.g_full)
   Hiv .= @view nlp.g_full[nlp.free]        # ∇²Fᵢ(x) * v = (∇²Fᵢ(X))[v_free; 0]
