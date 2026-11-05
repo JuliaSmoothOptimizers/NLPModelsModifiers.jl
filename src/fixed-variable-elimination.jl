@@ -48,6 +48,7 @@ mutable struct FixedVariableEliminationModel{
   free::Vector{Int}   # indices (in the full model) of the free variables
 
   # positions, in the coordinates of the full model, of the entries involving fixed variables
+  jac_dead::Vector{Int}      # in the Jacobian
   jac_lin_dead::Vector{Int}  # in the linear Jacobian
   jac_nln_dead::Vector{Int}  # in the nonlinear Jacobian
   hess_dead::Vector{Int}     # in the Hessian of the Lagrangian
@@ -72,6 +73,7 @@ mutable struct FixedVariableEliminationNLSModel{
   free::Vector{Int}   # indices (in the full model) of the free variables
 
   # positions, in the coordinates of the full model, of the entries involving fixed variables
+  jac_dead::Vector{Int}      # in the Jacobian
   jac_lin_dead::Vector{Int}  # in the linear Jacobian
   jac_nln_dead::Vector{Int}  # in the nonlinear Jacobian
   hess_dead::Vector{Int}     # in the Hessian of the Lagrangian
@@ -273,7 +275,78 @@ end
 # Sparse API
 # ------------------------------------------------------------------------
 
+for (Model, structure_f!, nnz, dead) in (
+  (:FixedVariableEliminationModels, :jac_structure!, :(nlp.meta.nnzj), :jac_dead),
+  (:FixedVariableEliminationModels, :jac_lin_structure!, :(nlp.meta.lin_nnzj), :jac_lin_dead),
+  (:FixedVariableEliminationModels, :jac_nln_structure!, :(nlp.meta.nln_nnzj), :jac_nln_dead),
+  (:FixedVariableEliminationNLSModel, :jac_structure_residual!, :(nlp.nls_meta.nnzj), :jac_residual_dead,),
+)
+  @eval function NLPModels.$structure_f!(
+    nlp::$Model,
+    rows::AbstractVector{T},
+    cols::AbstractVector{T},
+  ) where {T <: Integer}
+    @lencheck $nnz rows cols
+
+    $structure_f!(nlp.model, rows, cols)     # compute the sparsity structure of the full model
+
+    # Kill the column entries that correspond to fixed variables.
+    dead_idx, n_free = 1, length(nlp.free)
+    for k in eachindex(cols)                 # O(nnzj)
+      col_j_free_idx = searchsortedfirst(nlp.free, cols[k])  # O(log(n_free))
+      is_col_j_free = nlp.free[min(col_j_free_idx, n_free)] == cols[k]
+      if is_col_j_free
+        cols[k] = col_j_free_idx         # remap the column index to the free variable space
+      else
+        rows[k], cols[k] = 1, 1              # Kill the entry: move it to some entry in the free variable space.
+        nlp.$dead[dead_idx] = k              # Bookkeeping
+        dead_idx += 1
+      end
+    end
+    return rows, cols
+  end
+end
+
+for (Model, structure_f!, nnz, dead) in (
+  (:FixedVariableEliminationModels, :hess_structure!, :(nlp.meta.nnzh), :hess_dead),
+  (:FixedVariableEliminationNLSModel, :hess_structure_residual!, :(nlp.nls_meta.nnzh), :hess_residual_dead,),
+)
+  @eval function NLPModels.$structure_f!(
+    nlp::$Model,
+    rows::AbstractVector{<:Integer},
+    cols::AbstractVector{<:Integer},
+  )
+    @lencheck $nnz rows cols
+
+    $structure_f!(nlp.model, rows, cols) # compute the sparsity structure of the full model
+
+    # Kill the entries that correspond to fixed variables.
+    dead_idx, n_free = 1, length(nlp.free)
+    for k in eachindex(cols)                 # O(nnzh)
+
+      # Check column
+      col_h_free_idx = searchsortedfirst(nlp.free, cols[k])  # O(log(n_free))
+      col_is_free_h_idx = nlp.free[min(col_h_free_idx, n_free)] == cols[k]
+
+      # Check row
+      row_h_free_idx = searchsortedfirst(nlp.free, rows[k])  # O(log(n_free))
+      row_is_free_h_idx = nlp.free[min(row_h_free_idx, n_free)] == rows[k]
+
+      if col_is_free_h_idx && row_is_free_h_idx
+        cols[k] = col_h_free_idx         # remap the column index to the free variable space
+        rows[k] = row_h_free_idx         # remap the row index to the free variable space
+      else
+        rows[k], cols[k] = 1, 1        # Kill the entry: move it to some entry in the free variable space.
+        nlp.$dead[dead_idx] = k        # Bookkeeping
+        dead_idx += 1
+      end
+    end
+    return rows, cols
+  end
+end
+
 for (Model, coord_f!, nnz, dead) in (
+  (:FixedVariableEliminationModels, :jac_coord!, :(nlp.meta.nnzj), :jac_dead),
   (:FixedVariableEliminationModels, :jac_lin_coord!, :(nlp.meta.lin_nnzj), :jac_lin_dead),
   (:FixedVariableEliminationModels, :jac_nln_coord!, :(nlp.meta.nln_nnzj), :jac_nln_dead),
   (:FixedVariableEliminationNLSModel, :jac_coord_residual!, :(nlp.nls_meta.nnzj), :jac_residual_dead,),
