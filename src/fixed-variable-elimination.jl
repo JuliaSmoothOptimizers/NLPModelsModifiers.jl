@@ -94,6 +94,100 @@ const FixedVariableEliminationModels =
 
 nls_meta(nlp::FixedVariableEliminationNLSModel) = nlp.nls_meta
 
+function fixed_variable_elimination_meta(
+  meta::AbstractNLPModelMeta{T, S};
+  name = meta.name * "-nofixed",
+) where {T, S}
+  free = setdiff(1:(meta.nvar), meta.ifix)
+
+  if isempty(free)
+    throw(error("NLPModels whose variables are all fixed are not supported."))
+  end
+
+  return NLPModelMeta{T, S}(
+    length(free),
+    x0 = meta.x0[free],
+    lvar = meta.lvar[free],
+    uvar = meta.uvar[free],
+    ncon = meta.ncon,
+    lcon = meta.lcon,
+    ucon = meta.ucon,
+    y0 = meta.y0,
+    nnzj = meta.nnzj,   # the sparsity structure of the full model is kept,
+    nnzh = meta.nnzh,   # the entries involving fixed variables become explicit zeros
+    lin = meta.lin,
+    lin_nnzj = meta.lin_nnzj,
+    nln_nnzj = meta.nln_nnzj,
+    name = name,
+    minimize = meta.minimize,
+    islp = meta.islp,
+  )
+end
+
+function fixed_variable_elimination_buffers(meta::AbstractNLPModelMeta{T, S}) where {T, S}
+  x_full = copy(meta.x0)
+  x_full[meta.ifix] .= @view meta.lvar[meta.ifix]
+  g_full = similar(meta.x0)
+  v_full = fill!(similar(meta.x0), zero(T))
+  return x_full, g_full, v_full
+end
+
+"Construct a `FixedVariableEliminationModel` from another type of model."
+function FixedVariableEliminationModel(model::AbstractNLPModel; name = model.meta.name * "-nofixed")
+  isempty(model.meta.ifix) && return model
+
+  free = setdiff(1:(model.meta.nvar), model.meta.ifix)
+  meta = fixed_variable_elimination_meta(model.meta, name = name)
+  x_full, g_full, v_full = fixed_variable_elimination_buffers(model.meta)
+
+  # the dead entries are computed at the first call to the sparse API: each list is a distinct [-1]
+  fnlp = FixedVariableEliminationModel(meta, model, free, [-1], [-1], [-1], [-1], x_full, g_full, v_full)
+  finalizer(nlp -> finalize(nlp.model), fnlp)
+
+  return fnlp
+end
+
+"Construct a `FixedVariableEliminationNLSModel` from another type of nonlinear least-squares model."
+function FixedVariableEliminationNLSModel(
+  model::AbstractNLSModel{T, S};
+  name = model.meta.name * "-nofixed",
+) where {T, S}
+  isempty(model.meta.ifix) && return model
+
+  free = setdiff(1:(model.meta.nvar), model.meta.ifix)
+  meta = fixed_variable_elimination_meta(model.meta, name = name)
+  nls_meta = NLSMeta{T, S}(
+    model.nls_meta.nequ,
+    meta.nvar,
+    x0 = meta.x0,
+    nnzj = model.nls_meta.nnzj,
+    nnzh = model.nls_meta.nnzh,
+    lin = model.nls_meta.lin,
+  )
+  x_full, g_full, v_full = fixed_variable_elimination_buffers(model.meta)
+
+  # the dead entries are computed at the first call to the sparse API: each list is a distinct [-1]
+  fnls = FixedVariableEliminationNLSModel(
+    meta,
+    nls_meta,
+    model,
+    free,
+    [-1],
+    [-1],
+    [-1],
+    [-1],
+    [-1],
+    [-1],
+    x_full,
+    g_full,
+    v_full,
+  )
+  finalizer(nls -> finalize(nls.model), fnls)
+
+  return fnls
+end
+
+
 # ------------------------------------------------------------------------
 # NLPModels API
 # ------------------------------------------------------------------------
@@ -295,6 +389,7 @@ for (Model, structure_f!, nnz, dead) in (
 
     # Kill the column entries that correspond to fixed variables.
     record = is_uninitialized(nlp.$dead)     # first call: record the dead entries
+    record && empty!(nlp.$dead)              # remove the [-1] sentinel
     n_free = length(nlp.free)
     for k in eachindex(cols)                 # O(nnzj)
       col_j_free_idx = searchsortedfirst(nlp.free, cols[k])  # O(log(n_free))
@@ -325,6 +420,7 @@ for (Model, structure_f!, nnz, dead) in (
 
     # Kill the entries that correspond to fixed variables.
     record = is_uninitialized(nlp.$dead)     # first call: record the dead entries
+    record && empty!(nlp.$dead)              # remove the [-1] sentinel
     n_free = length(nlp.free)
     for k in eachindex(cols)                 # O(nnzh)
 
