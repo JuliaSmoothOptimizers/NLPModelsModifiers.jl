@@ -16,7 +16,7 @@ model has the form
 \end{aligned}
 ```
 
-Denoting with $$\mathcal{F} = \{i \in \{1, 2, \ldots, n\} : ℓ_i = u_i\}$$ the set of indices of the fixed variables,
+Denoting with ``\mathcal{F} = \{i \in \{1, 2, \ldots, n\} : ℓ_i = u_i\}`` the set of indices of the fixed variables,
 the new model appears to the user as
 
 ```math
@@ -26,13 +26,19 @@ the new model appears to the user as
                     &  ℓ_{\mathcal{F}^c}  ≤ x ≤  u_{\mathcal{F}^c},
 \end{aligned}
 ```
-where $$\mathcal{F}^c = \{1, 2, \ldots, n\} \setminus \mathcal{F}$$ and 
+where ``\mathcal{F}^c = \{1, 2, \ldots, n\} \setminus \mathcal{F}`` and
 ```math
 \begin{aligned}
-       \bar f(x) &= f(x, l) = f(x, u) = f(X), \\
-       \bar c(x) &= c(x, l) = c(x, u) = c(X).
+       \bar f(x) &= f(X), \\
+       \bar c(x) &= c(X),
 \end{aligned}
 ```
+with ``X_{\mathcal{F}^c} = x`` and ``X_{\mathcal{F}} = ℓ_{\mathcal{F}} = u_{\mathcal{F}}``.
+
+The sparsity structure of the original model is kept: the entries of the Jacobian and Hessian
+that involve fixed variables are moved onto another entry and set to zero. Hence, `nnzj` and
+`nnzh` are those of the original model, and the sparse coordinates may contain duplicate
+entries and explicit zeros.
 
 !!! warning
     It is recommended to formulate NLPModels without fixed variables.
@@ -60,7 +66,7 @@ mutable struct FixedVariableEliminationModel{
 end
 
 @doc raw"""Like `FixedVariableEliminationModel`, this model eliminates the fixed variables
-of a nonlinear least-squares model. 
+of a nonlinear least-squares model.
 """
 mutable struct FixedVariableEliminationNLSModel{
   T,
@@ -189,7 +195,12 @@ function fixed_variable_elimination_buffers(meta::AbstractNLPModelMeta{T, S}) wh
   return x_full, g_full, v_full
 end
 
-"Construct a `FixedVariableEliminationModel` from another type of model."
+"""
+    FixedVariableEliminationModel(model; name = model.meta.name * "-nofixed")
+
+Construct a `FixedVariableEliminationModel` from another type of model.
+If `model` has no fixed variables, `model` itself is returned.
+"""
 function FixedVariableEliminationModel(model::AbstractNLPModel; name = model.meta.name * "-nofixed")
   isempty(model.meta.ifix) && return model
 
@@ -204,7 +215,12 @@ function FixedVariableEliminationModel(model::AbstractNLPModel; name = model.met
   return fnlp
 end
 
-"Construct a `FixedVariableEliminationNLSModel` from another type of nonlinear least-squares model."
+"""
+    FixedVariableEliminationNLSModel(model; name = model.meta.name * "-nofixed")
+
+Construct a `FixedVariableEliminationNLSModel` from another type of nonlinear least-squares model.
+If `model` has no fixed variables, `model` itself is returned.
+"""
 function FixedVariableEliminationNLSModel(
   model::AbstractNLSModel{T, S};
   name = model.meta.name * "-nofixed",
