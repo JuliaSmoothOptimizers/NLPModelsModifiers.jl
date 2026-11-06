@@ -159,31 +159,18 @@ function fixed_variable_elimination_meta(
     throw(error("NLPModels whose variables are all fixed are not supported."))
   end
 
-  return NLPModelMeta{T, S}(
-    length(free),
+  nvar = length(free)
+  return NLPModelMeta(
+    meta;
+    nvar = nvar,
     x0 = meta.x0[free],
     lvar = meta.lvar[free],
     uvar = meta.uvar[free],
-    ncon = meta.ncon,
-    lcon = meta.lcon,
-    ucon = meta.ucon,
-    y0 = meta.y0,
-    nnzj = meta.nnzj,   # the sparsity structure of the full model is kept,
-    nnzh = meta.nnzh,   # the entries involving fixed variables become explicit zeros
-    lin = meta.lin,
-    lin_nnzj = meta.lin_nnzj,
-    nln_nnzj = meta.nln_nnzj,
+    nlvb = nvar,
+    nlvo = nvar,
+    nlvc = nvar,
+    nnzo = nvar,
     name = name,
-    minimize = meta.minimize,
-    islp = meta.islp,
-    sparse_jacobian = meta.sparse_jacobian,
-    sparse_hessian = meta.sparse_hessian,
-    grad_available = meta.grad_available,
-    jac_available = meta.jac_available,
-    hess_available = meta.hess_available,
-    jprod_available = meta.jprod_available,
-    jtprod_available = meta.jtprod_available,
-    hprod_available = meta.hprod_available,
   )
 end
 
@@ -232,7 +219,7 @@ function FixedVariableEliminationNLSModel(
   nls_meta = NLSMeta{T, S}(
     model.nls_meta.nequ,
     meta.nvar,
-    x0 = meta.x0,
+    x0 = model.nls_meta.x0[free],
     nnzj = model.nls_meta.nnzj,
     nnzh = model.nls_meta.nnzh,
     lin = model.nls_meta.lin,
