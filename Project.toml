@@ -20,9 +20,10 @@ SparseArrays = "1.10"
 julia = "1.10"
 
 [extras]
+ADNLPModels = "54578032-b7ea-4c30-94aa-7cbd1cce6c9a"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 NLPModelsTest = "7998695d-6960-4d3a-85c4-e1bceb8cd856"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["CUDA", "NLPModelsTest", "Test"]
+test = ["ADNLPModels", "CUDA", "NLPModelsTest", "Test"]
