@@ -1,5 +1,9 @@
 @testset "Check allocations for model modifiers of NLP" begin
   map(
+    nlp -> NLPModelsTest.test_zero_allocations(nlp, linear_api = true, exclude = []),
+    map(x -> NoFixedModel(eval(Symbol(x))()), NLPModelsTest.nlp_problems),
+  )
+  map(
     nlp -> NLPModelsTest.test_zero_allocations(nlp, linear_api = true, exclude = [hess]),
     map(x -> LBFGSModel(eval(Symbol(x))()), NLPModelsTest.nlp_problems),
   )

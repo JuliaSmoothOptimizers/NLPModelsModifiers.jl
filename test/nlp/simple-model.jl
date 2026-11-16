@@ -153,13 +153,20 @@ end
 NLPModels.equality_constrained(meta::SimpleNLPMeta) = length(meta.jfix) == meta.ncon > 0
 NLPModels.unconstrained(meta::SimpleNLPMeta) = meta.ncon == 0 && !has_bounds(meta)
 
-function SimpleNLPModel(::Type{T}, ::Type{NLPModelMeta}) where {T}
+function SimpleNLPModel(::Type{T}, ::Type{NLPModelMeta}; fixed_var = false) where {T}
+  if fixed_var
+    lvar = zeros(T, 2)
+    uvar = T[1; 0]
+  else
+    lvar = zeros(T, 2)
+    uvar = ones(T, 2)
+  end
   meta = NLPModelMeta{T, Vector{T}}(
     2,
     nnzh = 2,
     ncon = 2,
-    lvar = zeros(T, 2),
-    uvar = ones(T, 2),
+    lvar = lvar,
+    uvar = uvar,
     x0 = T[2; 2],
     lcon = T[0; 0],
     ucon = T[0; Inf],
@@ -170,13 +177,20 @@ function SimpleNLPModel(::Type{T}, ::Type{NLPModelMeta}) where {T}
   )
   return SimpleNLPModel(meta, Counters())
 end
-function SimpleNLPModel(::Type{T}, ::Type{SimpleNLPMeta}) where {T}
+function SimpleNLPModel(::Type{T}, ::Type{SimpleNLPMeta}; fixed_var = false) where {T}
+  if fixed_var
+    lvar = zeros(T, 2)
+    uvar = T[1; 0]
+  else
+    lvar = zeros(T, 2)
+    uvar = ones(T, 2)
+  end
   meta = SimpleNLPMeta{T, Vector{T}}(
     2,
     nnzh = 2,
     ncon = 2,
-    lvar = zeros(T, 2),
-    uvar = ones(T, 2),
+    lvar = lvar,
+    uvar = uvar,
     x0 = T[2; 2],
     lcon = T[0; 0],
     ucon = T[0; Inf],
@@ -187,7 +201,7 @@ function SimpleNLPModel(::Type{T}, ::Type{SimpleNLPMeta}) where {T}
   )
   return SimpleNLPModel(meta, Counters())
 end
-SimpleNLPModel() = SimpleNLPModel(Float64, NLPModelMeta)
+SimpleNLPModel(; kwargs...) = SimpleNLPModel(Float64, NLPModelMeta; kwargs...)
 
 function NLPModels.obj(nlp::SimpleNLPModel, x::AbstractVector)
   @lencheck 2 x
