@@ -153,39 +153,41 @@ end
 NLPModels.equality_constrained(meta::SimpleNLPMeta) = length(meta.jfix) == meta.ncon > 0
 NLPModels.unconstrained(meta::SimpleNLPMeta) = meta.ncon == 0 && !has_bounds(meta)
 
-function SimpleNLPModel(::Type{T}, ::Type{NLPModelMeta}) where {T}
-  meta = NLPModelMeta{T, Vector{T}}(
-    2,
-    nnzh = 2,
-    ncon = 2,
-    lvar = zeros(T, 2),
-    uvar = ones(T, 2),
-    x0 = T[2; 2],
-    lcon = T[0; 0],
-    ucon = T[0; Inf],
-    name = "Simple NLP Model",
-    lin_nnzj = 2,
-    nln_nnzj = 2,
-    lin = [1],
-  )
-  return SimpleNLPModel(meta, Counters())
+# SimpleNLPMeta does not store the following fields: their getters return the defaults of
+# NLPModelMeta, so that the NLPModelMeta copier can be used on a SimpleNLPMeta.
+for field in (
+  :variable_bounds_analysis,
+  :constraint_bounds_analysis,
+  :sparse_jacobian,
+  :sparse_hessian,
+  :grad_available,
+  :hess_available,
+  :hprod_available,
+)
+  @eval NLPModels.$(Symbol(:get_, field))(meta::SimpleNLPMeta) = true
 end
-function SimpleNLPModel(::Type{T}, ::Type{SimpleNLPMeta}) where {T}
-  meta = SimpleNLPMeta{T, Vector{T}}(
-    2,
-    nnzh = 2,
-    ncon = 2,
-    lvar = zeros(T, 2),
-    uvar = ones(T, 2),
-    x0 = T[2; 2],
-    lcon = T[0; 0],
-    ucon = T[0; Inf],
-    name = "Simple NLP Model",
-    lin_nnzj = 2,
-    nln_nnzj = 2,
-    lin = [1],
-  )
-  return SimpleNLPModel(meta, Counters())
+for field in (:jac_available, :jprod_available, :jtprod_available)
+  @eval NLPModels.$(Symbol(:get_, field))(meta::SimpleNLPMeta) = meta.ncon > 0
+end
+
+for M in (:NLPModelMeta, :SimpleNLPMeta)
+  @eval function SimpleNLPModel(::Type{T}, ::Type{$M}) where {T}
+    meta = $M{T, Vector{T}}(
+      2,
+      nnzh = 2,
+      ncon = 2,
+      lvar = zeros(T, 2),
+      uvar = ones(T, 2),
+      x0 = T[2; 2],
+      lcon = T[0; 0],
+      ucon = T[0; Inf],
+      name = "Simple NLP Model",
+      lin_nnzj = 2,
+      nln_nnzj = 2,
+      lin = [1],
+    )
+    return SimpleNLPModel(meta, Counters())
+  end
 end
 SimpleNLPModel() = SimpleNLPModel(Float64, NLPModelMeta)
 

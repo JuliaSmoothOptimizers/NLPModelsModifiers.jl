@@ -11,6 +11,10 @@ include("nls/feasibility-residual.jl")
 include("nls/slack-model.jl")
 
 using CUDA, NLPModelsTest
+using ADNLPModels
+
+include("nlp/fixed-variable-elimination.jl")
+include("nls/fixed-variable-elimination.jl")
 
 if CUDA.functional()
   include("gpu_test.jl")

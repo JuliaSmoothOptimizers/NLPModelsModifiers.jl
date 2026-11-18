@@ -16,6 +16,7 @@ end
 
 include("feasibility-form-nls.jl")
 include("feasibility-residual.jl")
+include("fixed-variable-elimination.jl")
 include("quasi-newton.jl")
 include("slack-model.jl")
 include("utils.jl")
