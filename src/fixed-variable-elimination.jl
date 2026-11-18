@@ -131,6 +131,12 @@ If `nlp` is wrapped in other models, it can be retrieved with `find_model`.
 recover_full_solution(nlp::FixedVariableEliminationModels, x::AbstractVector) =
   recover_full_solution!(nlp, x, similar(nlp.x_full))
 
+function recover_full_solution(nlp::AbstractNLPModel, x::AbstractVector)
+  fnlp = find_model(FixedVariableEliminationModels, nlp)
+  X = fnlp === nothing ? copy(x) : recover_full_solution(fnlp, x)
+  return X
+end
+
 """
     recover_full_solution!(nlp, x, X)
 
@@ -146,6 +152,17 @@ function recover_full_solution!(
 
   X .= nlp.x_full                          # fixed entries hold their fixed value
   X[nlp.free] .= x                         # load free variables
+  return X
+end
+
+function recover_full_solution!(
+  nlp::AbstractNLPModel,
+  x::AbstractVector,
+  X::AbstractVector,
+)
+  # Find a FixedVariableEliminationModels model in the chain of models, if any.
+  fnlp = find_model(FixedVariableEliminationModels, nlp)
+  fnlp === nothing ? (X .= x) : recover_full_solution!(fnlp, x, X)
   return X
 end
 
