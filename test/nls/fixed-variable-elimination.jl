@@ -45,6 +45,8 @@
     nls = FixedVariableEliminationNLSModel(full_from_T(Float64))
     @test recover_full_solution(nls, [3.0]) == [0.5, 3.0, -0.5]
 
+    @test recover_full_solution(model, [0.5, 3.0, -0.5]) == [0.5, 3.0, -0.5]
+
     io = IOBuffer()
     show(io, nls)
     @test occursin(

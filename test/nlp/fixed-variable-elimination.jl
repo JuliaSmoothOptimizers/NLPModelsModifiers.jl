@@ -78,16 +78,23 @@
   end
 
   @testset "Utilities" begin
-    nlp = FixedVariableEliminationModel(full_from_T(Float64))
+    fixed_nlp = full_from_T(Float64)
+    nlp = FixedVariableEliminationModel(fixed_nlp)
     @test recover_full_solution(nlp, [3.0, 4.0]) == [3.0, 0.0, 4.0, 0.5]
     X = zeros(4)
     recover_full_solution!(nlp, [5.0, 6.0], X)
     @test X == [5.0, 0.0, 6.0, 0.5]
 
+    @test recover_full_solution(fixed_nlp, [3.0, 4.0, 5.0, 6.0]) == [3.0, 4.0, 5.0, 6.0]
+
+    recover_full_solution!(fixed_nlp, [3.0, 4.0, 5.0, 6.0], X)
+    @test X == [3.0, 4.0, 5.0, 6.0]
+
     @test get_model(nlp) isa ADNLPModel
     qn = LBFGSModel(nlp)
     @test find_model(FixedVariableEliminationModel, qn) === nlp
     @test find_model(ADNLPModel, qn) isa ADNLPModel
+    @test recover_full_solution(qn, [3.0, 4.0]) == [3.0, 0.0, 4.0, 0.5]
 
     io = IOBuffer()
     show(io, nlp)
